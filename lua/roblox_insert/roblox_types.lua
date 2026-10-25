@@ -83,11 +83,9 @@ for alias, filename in pairs(font_aliases) do
 	font_lookup[alias] = filename
 end
 
+---@param name string
+---@return boolean, string?
 local function verify_font(name)
-	if type(name) ~= "string" then
-		return false, nil
-	end
-
 	local filename = font_lookup[name]
 
 	if not filename then
@@ -97,6 +95,8 @@ local function verify_font(name)
 	return true, filename
 end
 
+---@param t string
+---@return boolean
 local function handle_nil(t)
 	if t == "nil" then
 		return true
@@ -104,15 +104,25 @@ local function handle_nil(t)
 	return false
 end
 
+---@param v number|string
+---@param min number
+---@param max number
+---@param default number?
+---@return number
 local function clamp(v, min, max, default)
 	v = tonumber(v) or 0
 	return math.max(min, math.min(max, tonumber(v) or default or min))
 end
 
+---@param enum string
+---@param field string
+---@return boolean, number?
 local function verify_enum(enum, field)
 	return enums[enum][field] ~= nil, enums[enum][field]
 end
 
+---@param t {Hex: string?, R: string?, G: string?, B: string?}
+---@return boolean, number[]?, {R: string, G: string, B: string}?
 local function verify_color_3(t)
 	local return_val = {}
 	if t.Hex then
@@ -138,7 +148,7 @@ local function verify_color_3(t)
 	for k, i in pairs(t) do
 		indexes = indexes + 1
 		if tonumber(i) == nil and k ~= "Hex" then
-			return false, nil
+			return false, nil, nil
 		end
 		return_val[k] = tonumber(i)
 	end
@@ -160,6 +170,8 @@ local function verify_color_3(t)
 	return false
 end
 
+---@param t { X: string?, Y: string?, Z: string? }
+---@return boolean, number[]?, {X: string?, Y: string?, Z: string?}
 local function verify_vector_3(t)
 	local return_val = {}
 	local indexes = 0
@@ -181,13 +193,15 @@ local function verify_vector_3(t)
 	return false, nil, t
 end
 
+---@param t { X: string?, Y: string?}
+---@return boolean, number[]?, {X: string?, Y: string?}
 local function verify_vector_2(t)
 	local return_val = {}
 	local indexes = 0
 	for k, i in pairs(t) do
 		indexes = indexes + 1
 		if tonumber(i) == nil then
-			return false, nil
+			return false, nil, t
 		end
 		return_val[k] = tonumber(i)
 	end
@@ -198,7 +212,7 @@ local function verify_vector_2(t)
 		}
 		return true, return_val, t
 	end
-	return false, nil
+	return false, nil, t
 end
 
 roblox_types.Axes = {
@@ -208,6 +222,8 @@ roblox_types.Axes = {
 		"Y",
 		"Z",
 	},
+	---@param t {X: string?, Y: string?, Z: string?}
+	---@return boolean, string[], {X: string?, Y: string?, Z: string?}
 	verification = function(t)
 		local return_val = {}
 		if t.X == "true" then
@@ -221,6 +237,8 @@ roblox_types.Axes = {
 		end
 		return true, return_val, t
 	end,
+	---@param t any?
+	---@return boolean, boolean, {X: string?, Y: string?, Z: string?}?
 	reverse = function(t)
 		if type(t) ~= "table" then
 			return false, false, nil
@@ -241,6 +259,8 @@ roblox_types.BinaryString = {
 	fields = {
 		"",
 	},
+	---@param t string
+	---@return boolean, string?
 	verification = function(t)
 		if handle_nil(t) then
 			return true, nil
@@ -250,6 +270,8 @@ roblox_types.BinaryString = {
 		end
 		return true, t
 	end,
+	---@param t any?
+	---@return boolean, boolean, string?
 	reverse = function(t)
 		if type(t) ~= "string" then
 			return false, false, nil
@@ -267,6 +289,8 @@ roblox_types.Bool = {
 	fields = {
 		"",
 	},
+	---@param t string
+	---@return boolean, boolean?
 	verification = function(t)
 		if handle_nil(t) then
 			return true, nil
@@ -280,6 +304,8 @@ roblox_types.Bool = {
 		end
 		return false, nil
 	end,
+	---@param t any?
+	---@return boolean, boolean, string?
 	reverse = function(t)
 		if type(t) ~= "boolean" then
 			return false, false, nil
@@ -293,6 +319,8 @@ roblox_types.BrickColor = {
 	fields = {
 		"Color",
 	},
+	---@param t string
+	---@return boolean, integer?
 	verification = function(t)
 		if handle_nil(t) then
 			return true, nil
@@ -305,6 +333,8 @@ roblox_types.BrickColor = {
 
 		return brick_colors[t] ~= nil, brick_colors[t]
 	end,
+	---@param t any?
+	---@return boolean, boolean, string?
 	reverse = function(t)
 		if type(t) ~= "number" then
 			return false, false, nil
@@ -329,6 +359,8 @@ roblox_types.CFrame = {
 		"R21",
 		"R22",
 	},
+	---@param t {X: string?, Y: string?, Z: string?, R00: string?, R01: string?, R02: string?, R10: string?, R11: string?, R12: string?, R20: string?, R21: string?, R22: string?}
+	---@return boolean, {position: number[], orientation: number[][]}?, {X: string, Y: string, Z: string, R00: string, R01: string, R02: string, R10: string, R11: string, R12: string, R20: string, R21: string, R22: string}?
 	verification = function(t)
 		local return_val = {}
 		local indexes = 0
@@ -371,6 +403,8 @@ roblox_types.CFrame = {
 		end
 		return false, nil
 	end,
+	---@param t any?
+	---@return boolean, boolean, {X: string, Y: string, Z: string, R00: string, R01: string, R02: string, R10: string, R11: string, R12: string, R20: string, R21: string, R22: string}?
 	reverse = function(t)
 		if type(t) ~= "table" then
 			return false, false, nil
@@ -406,6 +440,8 @@ roblox_types.CFrame = {
 	end,
 }
 
+---@param t any?
+---@return boolean, boolean, {R: string, G: string, B: string}?
 local function revert_color_3(t)
 	if type(t) ~= "table" then
 		return false, false, nil
@@ -427,9 +463,13 @@ roblox_types.Color3 = {
 		"G",
 		"B",
 	},
+	---@param t {Hex: string?, R: string?, G: string?, B: string?}
+	---@return boolean, number[]?, {R: string, G: string, B: string}?
 	verification = function(t)
 		return verify_color_3(t)
 	end,
+	---@param t any?
+	---@return boolean, boolean, {R: string, G: string, B: string}?
 	reverse = function(t)
 		return revert_color_3(t)
 	end,
@@ -444,6 +484,8 @@ roblox_types.ColorSequence = {
 		"G",
 		"B",
 	},
+	---@param t {time: string?, Hex: string?, R: string?, G: string?, B: string? }[]
+	---@return boolean, {keypoints: {time: number, color: number[]}}?, {time: string, R: string, G: string, B: string }[]?
 	verification = function(t)
 		local return_val = {}
 		local correct = {}
@@ -461,7 +503,7 @@ roblox_types.ColorSequence = {
 					color = k,
 				})
 			else
-				return false, nil
+				return false, nil, nil
 			end
 		end
 		table.sort(return_val, function(a, b)
@@ -477,6 +519,8 @@ roblox_types.ColorSequence = {
 			{ keypoints = return_val },
 			correct
 	end,
+	---@param t any?
+	---@return boolean, boolean, {time: string, R: string, G: string, B: string }[]?
 	reverse = function(t)
 		if type(t) ~= "table" then
 			return false, false, nil
@@ -503,13 +547,17 @@ roblox_types.Content = {
 	fields = {
 		"rbxassetid://",
 	},
+	---@param t string
+	---@return boolean, string?
 	verification = function(t)
 		local i = tonumber(t)
 		if i == nil then
-			return false
+			return false, nil
 		end
 		return math.floor(i) == i, "rbxassetid://" .. (i or "")
 	end,
+	---@param t any?
+	---@return boolean, boolean, string?
 	reverse = function(t)
 		if type(t) ~= "string" then
 			return false, false, nil
@@ -529,13 +577,17 @@ roblox_types.ContentId = {
 	fields = {
 		"rbxassetid://",
 	},
+	---@param t string
+	---@return boolean, string?
 	verification = function(t)
 		local i = tonumber(t)
 		if i == nil then
-			return false
+			return false, nil
 		end
 		return math.floor(i) == i, "rbxassetid://" .. (i or "")
 	end,
+	---@param t any?
+	---@return boolean, boolean, string?
 	reverse = function(t)
 		if type(t) ~= "string" then
 			return false, false, nil
@@ -555,6 +607,9 @@ roblox_types.Enum = {
 	fields = {
 		"",
 	},
+	---@param enum string
+	---@param field string
+	---@return boolean, number?
 	verification = function(enum, field)
 		if handle_nil(field) then
 			return true, nil
@@ -584,6 +639,8 @@ roblox_types.Faces = {
 		"Bottom",
 		"Front",
 	},
+	---@param t {Right: string?, Top: string?, Back: string?, Left: string?, Bottom: string?, Front: string? }
+	---@return boolean, string[]?, {Right: string?, Top: string?, Back: string?, Left: string?, Bottom: string?, Front: string? }?
 	verification = function(t)
 		local return_val = {}
 
@@ -594,6 +651,8 @@ roblox_types.Faces = {
 		end
 		return true, return_val, t
 	end,
+	---@param t any?
+	---@return boolean, boolean,{Right: string?, Top: string?, Back: string?, Left: string?, Bottom: string?, Front: string? }?
 	reverse = function(t)
 		if type(t) ~= "table" then
 			return false, false, nil
@@ -625,12 +684,16 @@ roblox_types.Float32 = {
 	fields = {
 		"",
 	},
+	---@param t string
+	---@return boolean, number?
 	verification = function(t)
 		if handle_nil(t) then
 			return true, nil
 		end
 		return tonumber(t) ~= nil, tonumber(t)
 	end,
+	---@param t any?
+	---@return boolean, boolean, string?
 	reverse = function(t)
 		if type(t) ~= "number" then
 			return false, false, nil
@@ -644,9 +707,16 @@ roblox_types.Float64 = {
 	fields = {
 		"",
 	},
+	---@param t string
+	---@return boolean, number?
 	verification = function(t)
+		if handle_nil(t) then
+			return true, nil
+		end
 		return tonumber(t) ~= nil, tonumber(t)
 	end,
+	---@param t any?
+	---@return boolean, boolean, string?
 	reverse = function(t)
 		if type(t) ~= "number" then
 			return false, false, nil
@@ -662,17 +732,20 @@ roblox_types.Font = {
 		"weight",
 		"style",
 	},
+	---@param t {family: string?, weight: string?, style: string?}
+	---@return boolean, {family: string, weight: string, style: string}?, {family: string, weight: string, style: string}?
 	verification = function(t)
 		local tmp = vim.deepcopy(t)
 		local family = t.family
 		if family then
+			local non_null_family = family
 			local return_val = {}
 
 			local valid
-			valid, family = verify_font(family)
+			valid, family = verify_font(non_null_family)
 			tmp.family = t.family
 			if valid then
-				return_val.family = "rbxasset://fonts/families/" .. family .. ".json"
+				return_val.family = "rbxasset://fonts/families/" .. non_null_family .. ".json"
 			else
 				return false, nil
 			end
@@ -700,6 +773,8 @@ roblox_types.Font = {
 		end
 		return false, nil
 	end,
+	---@param t any?
+	---@return boolean, boolean, {family: string, weight: string, style: string}?
 	reverse = function(t)
 		if type(t) ~= "table" or type(t.family) ~= "string" then
 			return false, false, nil
@@ -724,6 +799,8 @@ roblox_types.Int32 = {
 	fields = {
 		"",
 	},
+	---@param t string
+	---@return boolean, integer?
 	verification = function(t)
 		if handle_nil(t) then
 			return true, nil
@@ -734,6 +811,8 @@ roblox_types.Int32 = {
 		end
 		return math.floor(i) == i, i
 	end,
+	---@param t any?
+	---@return boolean, boolean, string?
 	reverse = function(t)
 		if type(t) ~= "number" then
 			return false, false, nil
@@ -747,6 +826,8 @@ roblox_types.Int64 = {
 	fields = {
 		"",
 	},
+	---@param t string
+	---@return boolean, integer?
 	verification = function(t)
 		if handle_nil(t) then
 			return true, nil
@@ -757,6 +838,8 @@ roblox_types.Int64 = {
 		end
 		return math.floor(i) == i, i
 	end,
+	---@param t any?
+	---@return boolean, boolean, string?
 	reverse = function(t)
 		if type(t) ~= "number" then
 			return false, false, nil
@@ -771,6 +854,8 @@ roblox_types.NumberRange = {
 		"Min",
 		"Max",
 	},
+	---@param t {Min: string?, Max: string?}
+	---@return boolean, number[]?, {Min: string, Max: string}?
 	verification = function(t)
 		local min = tonumber(t.Min)
 		local max = tonumber(t.Max)
@@ -779,10 +864,12 @@ roblox_types.NumberRange = {
 		end
 		if min > max then
 			min, max = max, min
-			t.Min, t.Max = t.Max, t.Min
+			t.Min, t.Max = tostring(max), tostring(min)
 		end
-		return true, { min, max }, t
+		return true, { min, max }, { Min = tostring(min), Max = tostring(max) }
 	end,
+	---@param t any?
+	---@return boolean, boolean, {Min: string, Max: string}?
 	reverse = function(t)
 		if type(t) ~= "table" then
 			return false, false, nil
@@ -799,6 +886,8 @@ roblox_types.NumberSequence = {
 		"value",
 		"envelope",
 	},
+	---@param t {time: string?, value: string?, envelope: string?}[]
+	---@return boolean, {keypoints: {time: number, value: number, envelope: number}[]}?, {time: string, value: string, envelope: string}[]?
 	verification = function(t)
 		local tmp = vim.deepcopy(t)
 		local return_val = {}
@@ -831,6 +920,8 @@ roblox_types.NumberSequence = {
 			{ keypoints = return_val },
 			tmp
 	end,
+	---@param t any?
+	---@return boolean, boolean, {time: string, value: string, envelope: string}[]?
 	reverse = function(t)
 		if type(t) ~= "table" then
 			return false, false, nil
@@ -866,6 +957,8 @@ roblox_types.PhysicalProperties = {
 		"elasticityWeight",
 		"acousticAbsorption",
 	},
+	---@param t {density: string?, friction: string?, elasticity: string?, frictionWeight: string?, elasticityWeight: string?, acousticAbsorption: string?}
+	---@return boolean, table|string?, {density: string, friction: string, elasticity: string, frictionWeight: string, elasticityWeight: string, acousticAbsorption: string}?
 	verification = function(t)
 		local tmp = vim.deepcopy(t)
 		if next(t) == nil then
@@ -886,6 +979,8 @@ roblox_types.PhysicalProperties = {
 		tmp.acousticAbsorption = tostring(return_val.acousticAbsorption)
 		return true, return_val, tmp
 	end,
+	---@param t any?
+	---@return boolean, boolean, {density: string, friction: string, elasticity: string, frictionWeight: string, elasticityWeight: string, acousticAbsorption: string}?
 	reverse = function(t)
 		if type(t) ~= "table" then
 			if t == "Default" then
@@ -911,12 +1006,16 @@ roblox_types.ProtectedString = {
 	fields = {
 		"",
 	},
+	---@param t string
+	---@return boolean, string?
 	verification = function(t)
 		if type(t) == "string" then
 			return string.len(t) > 0, t
 		end
 		return false, nil
 	end,
+	---@param t any?
+	---@return boolean, boolean, string?
 	reverse = function(t)
 		if type(t) ~= "string" then
 			return false, false, nil
@@ -935,6 +1034,8 @@ roblox_types.Ray = {
 		"directionY",
 		"directionZ",
 	},
+	---@param t {originX: string?, originY: string?, originZ: string?, directionX: string?, directionY: string?, directionZ: string?}
+	---@return boolean, {origin: number[], direction: number[]}?, {originX: string?, originY: string?, originZ: string?, directionX: string?, directionY: string?, directionZ: string?}?
 	verification = function(t)
 		local return_val = {}
 		local verify
@@ -948,6 +1049,8 @@ roblox_types.Ray = {
 		end
 		return true, return_val, t
 	end,
+	---@param t any?
+	---@return boolean, boolean, {originX: string, originY: string, originZ: string, directionX: string, directionY: string, directionZ: string}?
 	reverse = function(t)
 		if type(t) ~= "table" then
 			return false, false, nil
@@ -975,6 +1078,8 @@ roblox_types.Rect = {
 		"X1",
 		"Y1",
 	},
+	---@param t {X0: string?, Y0: string?, X1: string?, Y1: string?}
+	---@return boolean, number[][]?, {X0: string?, Y0: string?, X1: string?, Y1: string?}?
 	verification = function(t)
 		local verify
 		local corner0
@@ -989,6 +1094,8 @@ roblox_types.Rect = {
 		end
 		return true, { corner0, corner1 }, t
 	end,
+	---@param t any?
+	---@return boolean, boolean, {X0: string, Y0: string, X1: string, Y1: string}?
 	reverse = function(t)
 		if type(t) ~= "table" then
 			return false, false, nil
@@ -1011,6 +1118,8 @@ roblox_types.String = {
 	fields = {
 		"",
 	},
+	---@param t string
+	---@return boolean, string?
 	verification = function(t)
 		if handle_nil(t) then
 			return true, nil
@@ -1020,6 +1129,8 @@ roblox_types.String = {
 		end
 		return false, nil
 	end,
+	---@param t any?
+	---@return boolean, boolean, string?
 	reverse = function(t)
 		if type(t) ~= "string" then
 			return false, false, nil
@@ -1027,28 +1138,32 @@ roblox_types.String = {
 		return true, true, t
 	end,
 }
+
 roblox_types.UDim = {
 	lua_type = "table",
 	fields = {
 		"Scale",
 		"Offset",
 	},
+	---@param t {Scale: string?, Offset: string?}
+	---@return boolean, number[]?, {Scale: string, Offset: string}?
 	verification = function(t)
 		local return_val = {}
 		local indexes = 0
 		for k, i in pairs(t) do
 			indexes = indexes + 1
 			if tonumber(i) == nil then
-				return false, nil
+				return false, nil, nil
 			end
 			return_val[k] = tonumber(i)
 		end
 		if indexes == 2 then
 			return_val = { return_val.Scale, return_val.Offset }
-			return true, return_val, t
+			return true, return_val, { Scale = tostring(return_val.Scale), Offset = tostring(return_val.Offset) }
 		end
 		return false
 	end,
+	---@param t any?
 	reverse = function(t)
 		if type(t) ~= "table" then
 			return false, false, nil
@@ -1069,6 +1184,8 @@ roblox_types.UDim2 = {
 		"yScale",
 		"yOffset",
 	},
+	---@param t {xScale: string?, xOffset: string?, yScale: string?, yOffset: string?}
+	---@return boolean, number[][]?, {xScale: string?, xOffset: string?, yScale: string?, yOffset: string?}?
 	verification = function(t)
 		local return_val = {}
 		local indexes = 0
@@ -1085,6 +1202,8 @@ roblox_types.UDim2 = {
 		end
 		return false
 	end,
+	---@param t any?
+	---@return boolean, boolean, {xScale: string, xOffset: string, yScale: string, yOffset: string}?
 	reverse = function(t)
 		if type(t) ~= "table" then
 			return false, false, nil
@@ -1107,9 +1226,13 @@ roblox_types.Vector2 = {
 		"X",
 		"Y",
 	},
+	---@param t { X: string?, Y: string?}
+	---@return boolean, number[]?, {X: string?, Y: string?}
 	verification = function(t)
 		return verify_vector_2(t)
 	end,
+	---@param t any?
+	---@return boolean, boolean, {X: string, Y: string}?
 	reverse = function(t)
 		if type(t) ~= "table" then
 			return false, false, nil
@@ -1128,9 +1251,13 @@ roblox_types.Vector3 = {
 		"Y",
 		"Z",
 	},
+	---@param t { X: string?, Y: string?, Z: string? }
+	---@return boolean, number[]?, {X: string?, Y: string?, Z: string?}
 	verification = function(t)
 		return verify_vector_3(t)
 	end,
+	---@param t any?
+	---@return boolean, boolean, {X: string, Y: string, Z: string}?
 	reverse = function(t)
 		if type(t) ~= "table" then
 			return false, false, nil
@@ -1143,6 +1270,9 @@ roblox_types.Vector3 = {
 	end,
 }
 
+---@param class string
+---@param json_data table
+---@return { [string]: {json: any?, value: any?} }?
 local function revert(class, json_data)
 	local class_def = data.raw.Classes[class]
 	if not class_def then

@@ -24,7 +24,7 @@ end
 
 m.create_file = create_file
 
-local function open_browser()
+local function open_browser(cwd)
 	local args = dir.generate_dimensions()
 	if not args then
 		return
@@ -88,7 +88,8 @@ local function open_browser()
 			browser.generate_dimensions,
 			browser.create_window,
 			browser.disp_property,
-			browser.disp_class
+			browser.disp_class,
+			cwd
 		)
 	end)
 end

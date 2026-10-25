@@ -12,6 +12,8 @@ local roblox_types = require("roblox_insert.roblox_types")
 local current_class = nil
 local search = false
 
+---@param t string
+---@return string?
 local function handle_nil(t)
 	if t == "nil" then
 		return nil
@@ -58,6 +60,8 @@ local expanded_categories = {
 	["Text Chat Properties"] = true,
 }
 
+---@param args {contents: string[]?, buffer_type: string?, width: number, height: number, col: number, row: number, border: string[][]?, title: string?, title_pos: string?, footer: string?, footer_pos: string?, [any]: any}
+---@return number, number
 local function create_window(args)
 	local buf = vim.api.nvim_create_buf(false, true)
 	args.buf = buf
@@ -91,6 +95,17 @@ end
 
 m.create_window = create_window
 
+---@param t string
+---@param properties_table table
+---@param name string
+---@param dimensions table
+---@param when_done function
+---@param enumeration string?
+---@param persistant boolean?
+---@param disp_win number?
+---@param disp_buf number?
+---@param focus_win number?
+---@return number?, number?
 local function disp_property(
 	t,
 	properties_table,
@@ -380,6 +395,10 @@ end
 
 m.disp_property = disp_property
 
+---@param buf number
+---@param class string
+---@param inside_buf boolean
+---@param edit_class boolean?
 local function disp_class(buf, class, inside_buf, edit_class)
 	local class_def = data.raw.Classes[class]
 	if not class_def then
@@ -405,10 +424,10 @@ local function disp_class(buf, class, inside_buf, edit_class)
 	end
 
 	local str = {
-		class,
+		"Class: " .. class,
 		"Current Config: " .. (saved_properties.name or ""),
 		"Config: " .. (((not edit_class) and (index .. "/" .. #saved_property_tables)) or "Editing Class"),
-		"Directory: " .. tostring(saved_properties.init_meta),
+		"As Directory: " .. tostring(saved_properties.init_meta or false),
 		"Properties:",
 	}
 
@@ -447,6 +466,8 @@ end
 
 m.disp_class = disp_class
 
+---@param buf number
+---@param init boolean
 local function disp_class_list(buf, init)
 	if init then
 		class_list_ref = {}
@@ -490,6 +511,11 @@ local function disp_class_list(buf, init)
 	return str
 end
 
+---@param buf number
+---@param category string
+---@param line number
+---@param favorite boolean
+---@param added_class string?
 local function modify_class_list(buf, category, line, favorite, added_class)
 	if not favorite then
 		expanded_categories[category] = not expanded_categories[category]
@@ -547,6 +573,9 @@ end
 
 m.disp_class_list = disp_class_list
 
+---@param name string
+---@param path string
+---@param visual_path string
 local function generate_dimensions(name, path, visual_path)
 	local width = math.ceil((160 / 209) * vim.o.columns)
 	local height = math.ceil((40 / 55) * vim.o.lines)
@@ -976,12 +1005,14 @@ local function generate_dimensions(name, path, visual_path)
 					local line = vim.api.nvim_win_get_cursor(win)[1]
 					local prop = properties_list_ref[line]
 					if prop.t ~= "name" and prop.t ~= "config" then
-						if (not edit_class) and prop.t == "init" then
-							prop.saved_props.init_meta = not prop.saved_props.init_meta
-							if (not edit_class) and prop.saved_props.name then
-								data.save_object_configs()
+						if prop.t == "init" then
+							if not edit_class then
+								prop.saved_props.init_meta = not prop.saved_props.init_meta
+								if (not edit_class) and prop.saved_props.name then
+									data.save_object_configs()
+								end
+								disp_class(buf, current_class)
 							end
-							disp_class(buf, current_class)
 						else
 							local function when_done(stay)
 								local pre = prop.props[prop.name] and prop.props[prop.name].json and " *" or "  "
@@ -1041,6 +1072,7 @@ local function generate_dimensions(name, path, visual_path)
 							local meta_json = (string.find(current_class, "Script", 1, true) ~= nil)
 							writer.edit_file(current_class, edit_path, json_table, properties.init_meta, meta_json)
 						end
+						close_browser()
 					else
 						create_input(
 							"Input",
@@ -1224,4 +1256,5 @@ local function generate_dimensions(name, path, visual_path)
 end
 
 m.generate_dimensions = generate_dimensions
+
 return m

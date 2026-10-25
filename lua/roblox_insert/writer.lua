@@ -56,8 +56,8 @@ t.create_file_data = create_file_data
 ---@param class string
 ---@param params {string: any}
 ---@param dir string?
----@param meta boolean
----@param init boolean
+---@param meta boolean?
+---@param init boolean?
 ---@return nil
 local function create_file(file_name, class, params, dir, meta, init)
 	dir = dir or vim.fn.expand("%:p:h")
@@ -77,7 +77,6 @@ local function create_file(file_name, class, params, dir, meta, init)
 			local meta_name
 			if init then
 				vim.fn.mkdir(vim.fs.joinpath(dir, file_name), "p")
-				vim.print(vim.fs.joinpath(dir, file_name))
 				dir = vim.fs.joinpath(dir, file_name)
 				path = vim.fs.joinpath(dir, "init.meta.json")
 				if string.find(class, "Script", 1, true) then
@@ -141,8 +140,13 @@ end
 
 t.create_file = create_file
 
+---@param class string
+---@param path string
+---@param params table
+---@param init boolean?
+---@param script boolean?
 local function edit_file(class, path, params, init, script)
-	if vim.uv.fs_stat(path) then
+	if vim.uv.fs_stat(path) or script then
 		local contents = create_file_data(class, params, script, init)
 		if not contents then
 			return nil

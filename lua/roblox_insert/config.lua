@@ -139,6 +139,10 @@ local desc = {
 	PrevKeypoint = "Displays the previous keypoint",
 }
 
+---@param buf number
+---@param command_name string
+---@param keybinds {[string]: boolean}?
+---@param func fun(): nil
 local function assign_command(buf, command_name, keybinds, func)
 	local description = desc[command_name]
 
@@ -262,6 +266,9 @@ local defaults = {
 
 t.config = vim.deepcopy(defaults)
 
+---@param opts table
+---@param k table
+---@param d boolean
 local function convert_keybind_config(opts, k, d)
 	for _, group in pairs(k.groups) do
 		for _, action in ipairs(group.actions) do
@@ -301,7 +308,7 @@ local function convert_keybind_config(opts, k, d)
 end
 
 local function assign_keybinds(opts)
-	convert_keybind_config(opts, opts.custom_keybinds)
+	convert_keybind_config(opts, opts.custom_keybinds, false)
 	if opts.enable_default_keybinds then
 		convert_keybind_config(opts, default_keybinds, true)
 	end
@@ -309,6 +316,7 @@ end
 
 assign_keybinds(t.config)
 
+---@param opts table?
 local function setup(opts)
 	opts = opts or {}
 	t.config = vim.tbl_deep_extend("force", vim.deepcopy(defaults), opts)

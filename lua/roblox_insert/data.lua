@@ -46,7 +46,7 @@ local function save_data(filename, data)
 		vim.fn.mkdir(path, "p")
 	end
 
-	local path = vim.fs.joinpath(path, filename .. ".json")
+	path = vim.fs.joinpath(path, filename .. ".json")
 
 	local file = io.open(path, "w")
 

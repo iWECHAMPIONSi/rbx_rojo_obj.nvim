@@ -1,3 +1,4 @@
+local vim = vim
 if vim.g.loaded_roblox_insert == 1 then
 	return
 end
@@ -19,8 +20,28 @@ end, {
 	desc = "Create a Roblox Object in the current buffer's directory or a directory specified starting from neovim's working directory",
 })
 
-vim.api.nvim_create_user_command("RbxBrowser", function()
-	require("roblox_insert.commands").open_browser()
+vim.api.nvim_create_user_command("RbxBrowser", function(opts)
+	require("roblox_insert.commands").open_browser(opts.args)
 end, {
-	desc = "Opend a browser similar to roblox's",
+	desc = "Open the Roblox browser at a directory within src",
+	nargs = "?",
+	complete = "dir",
+})
+
+vim.api.nvim_create_user_command("RbxBrowserCwd", function()
+	local dir
+	local bufnr = vim.api.nvim_get_current_buf()
+
+	local filetype = vim.api.nvim_get_option_value("filetype", { buf = bufnr })
+	if filetype == "netrw" then
+		dir = vim.b.netrw_curdir
+	end
+
+	local buftype = vim.api.nvim_get_option_value("buftype", { buf = bufnr })
+	if buftype == "" then
+		dir = vim.api.nvim_buf_get_name(0)
+	end
+	require("roblox_insert.commands").open_browser(dir)
+end, {
+	desc = "Open a browser similar to Roblox's with the directory opened in the cwd",
 })

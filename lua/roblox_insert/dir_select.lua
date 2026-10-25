@@ -21,6 +21,11 @@ local dir_ref_start = {
 
 local m = {}
 
+---@param field string?
+---@param t string?
+---@param initial_value string?
+---@param on_submit fun(value: string?): nil
+---@param title string?
 local function create_input(field, t, initial_value, on_submit, title)
 	local buf = vim.api.nvim_create_buf(false, true)
 	vim.bo[buf].buftype = "prompt"
@@ -79,6 +84,9 @@ end
 
 m.create_input = create_input
 
+---@param path string
+---@param name string
+---@param on_success fun(): nil
 local function check_name_collision(path, name, on_success)
 	if string.match(name, "%s") then
 		vim.notify("Directory or file name contains spaces", vim.log.levels.ERROR)
@@ -141,6 +149,7 @@ local init_types = {
 	{ "init.meta.json" },
 }
 
+---@param path string
 local function check_for_init(path)
 	for _, t in ipairs(init_types) do
 		if vim.uv.fs_stat(vim.fs.joinpath(path, t[1])) then
@@ -150,6 +159,10 @@ local function check_for_init(path)
 	return nil, nil, nil
 end
 
+---@param buf number
+---@param path_buf number?
+---@param path string
+---@param all boolean
 local function render_new_dir(buf, path_buf, path, all)
 	dir_ref = vim.deepcopy(dir_ref_start)
 	local dirs = {}
@@ -199,6 +212,7 @@ local function render_new_dir(buf, path_buf, path, all)
 				if contents then
 					t.class = contents.ClassName
 					t.contents = contents
+					t.file_path = vim.fs.joinpath(path, name)
 				else
 					vim.notify(err, vim.log.levels.ERROR)
 				end
@@ -211,6 +225,7 @@ local function render_new_dir(buf, path_buf, path, all)
 					if contents then
 						t.class = contents.className
 						t.contents = contents
+						t.file_path = vim.fs.joinpath(path, name)
 						metadata[n] = contents
 					else
 						vim.notify(err, vim.log.levels.ERROR)
@@ -384,7 +399,7 @@ local function generate_dimensions()
 			footer = "Enter: open/select",
 			footer_pos = "left",
 			width = width,
-			height = height - 2,
+			height = height - 6,
 			col = col,
 			row = row + 2,
 			border = {
@@ -408,9 +423,14 @@ local function generate_dimensions()
 				gen_args,
 				create_window,
 				disp_property,
-				disp_class
+				disp_class,
+				path
 			)
-				local path = vim.fs.joinpath(root_dir, src_name)
+				local src_dir = vim.fs.normalize(vim.fs.joinpath(root_dir, src_name))
+				local expanded_path = vim.fs.normalize(vim.fn.fnamemodify(path, ":p"))
+
+				path = (expanded_path == src_dir or vim.startswith(expanded_path, src_dir .. "/")) and expanded_path
+					or src_dir
 				vim.api.nvim_set_current_win(win)
 				local display_all = config.config.files_visible
 				render_new_dir(buf, p_buf, path, display_all)
@@ -477,9 +497,13 @@ local function generate_dimensions()
 					if return_val then
 						local ui_args = gen_args(selection.name, file_path, visual_path)
 						ui_args.search_bar.footer = ""
+						ui_args.search_bar.focus = true
+						ui_args.class_display.focus = true
+						ui_args.path_bar.focus = true
 						create_window(ui_args.search_bar)
 						create_window(ui_args.path_bar)
 						create_window(ui_args.class_display)
+						ui_args.class_edit_box.focus = true
 						ui_args.class_edit_box.buf, ui_args.class_edit_box.win = disp_property(
 							selection.class,
 							nil,
@@ -492,6 +516,8 @@ local function generate_dimensions()
 							nil,
 							ui_args.class_display.win
 						)
+
+						vim.api.nvim_set_current_win(ui_args.class_display.win)
 
 						local saved_object_properties = data.saved_object_configs[selection.class]
 						saved_object_properties.property_tables[-1] =
@@ -511,11 +537,16 @@ local function generate_dimensions()
 							selection.class,
 							file_path
 						)
-						disp_class(ui_args.class_display.buf, selection.class, true)
+						disp_class(ui_args.class_display.buf, selection.class, true, true)
+					else
+						vim.notify("Failed to convert file contents")
 					end
 				end
+				local function edit_class_caller()
+					edit_class()
+				end
 
-				assign_command(buf, "EditClass", config.config.keybinds.edit_class, edit_class)
+				assign_command(buf, "EditClass", config.config.keybinds.edit_class, edit_class_caller)
 
 				local function select_dir()
 					local line = vim.api.nvim_win_get_cursor(win)[1]
@@ -713,6 +744,7 @@ end
 
 m.generate_dimensions = generate_dimensions
 
+---@param on_resolved fun(): nil
 local function resolve_source_directory(on_resolved)
 	local function is_directory(path)
 		local stat = vim.uv.fs_stat(path)
