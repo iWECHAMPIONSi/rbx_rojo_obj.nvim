@@ -23,7 +23,7 @@ end, {
 vim.api.nvim_create_user_command("RbxBrowser", function(opts)
 	require("roblox_insert.commands").open_browser(opts.args)
 end, {
-	desc = "Open the Roblox browser at a directory within src",
+	desc = "Open the Roblox browser at a directory within src, starting from src/",
 	nargs = "?",
 	complete = "dir",
 })

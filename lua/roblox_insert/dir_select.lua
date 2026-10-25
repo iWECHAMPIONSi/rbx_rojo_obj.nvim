@@ -427,10 +427,30 @@ local function generate_dimensions()
 				path
 			)
 				local src_dir = vim.fs.normalize(vim.fs.joinpath(root_dir, src_name))
-				local expanded_path = vim.fs.normalize(vim.fn.fnamemodify(path, ":p"))
 
-				path = (expanded_path == src_dir or vim.startswith(expanded_path, src_dir .. "/")) and expanded_path
+				path = (path and path ~= "") and path or "."
+
+				local base = src_dir
+				if path == src_name or vim.startswith(path, src_name .. "/") then
+					base = root_dir
+				end
+
+				local expanded_path
+				if vim.fn.isabsolutepath(path) == 1 then
+					expanded_path = vim.fs.normalize(path)
+				else
+					expanded_path = vim.fs.normalize(vim.fs.joinpath(base, path))
+				end
+
+				local stat = vim.uv.fs_stat(expanded_path)
+				if stat and stat.type ~= "directory" then
+					expanded_path = vim.fs.dirname(expanded_path)
+				end
+
+				path = (stat and (expanded_path == src_dir or vim.startswith(expanded_path, src_dir .. "/")))
+						and expanded_path
 					or src_dir
+
 				vim.api.nvim_set_current_win(win)
 				local display_all = config.config.files_visible
 				render_new_dir(buf, p_buf, path, display_all)

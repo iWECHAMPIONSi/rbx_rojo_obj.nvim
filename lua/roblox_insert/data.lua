@@ -241,6 +241,7 @@ local browsable_classes = {
 	CornerWedgePart = true,
 	CylinderHandleAdornment = true,
 	CylindricalConstraint = true,
+	DebugClass = true,
 	Decal = true,
 	DepthOfFieldEffect = true,
 	Dialog = true,

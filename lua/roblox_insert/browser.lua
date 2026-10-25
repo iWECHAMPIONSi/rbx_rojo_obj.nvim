@@ -244,6 +244,7 @@ local function disp_property(
 			buf, win = create_window(dimensions)
 		else
 			buf, win = disp_buf, disp_win
+			vim.api.nvim_set_current_win(win)
 		end
 		if props and props.value then
 			value_ref = vim.deepcopy(props.value)
@@ -273,13 +274,17 @@ local function disp_property(
 					value = vim.deepcopy(value_ref),
 				}
 			end
-			when_done(true)
-			props = properties_table[name]
-			if props and props.value then
-				value_ref = vim.deepcopy(props.value)
+			when_done(not config.config.return_to_class_disp)
+			if not config.config.return_to_class_disp then
+				props = properties_table[name]
+				if props and props.value then
+					value_ref = vim.deepcopy(props.value)
+				end
+				field_ref = {}
+				disp_table(props, value_ref, field_ref, buf, win)
+			else
+				vim.cmd.CloseProperty()
 			end
-			field_ref = {}
-			disp_table(props, value_ref, field_ref, buf, win)
 		end
 
 		assign_command(buf, "ExportProperty", config.config.keybinds.export_property, export_property)
@@ -298,6 +303,7 @@ local function disp_property(
 			buf, win = create_window(dimensions)
 		else
 			buf, win = disp_buf, disp_win
+			vim.api.nvim_set_current_win(win)
 		end
 		disp_table(
 			nil,
@@ -372,21 +378,25 @@ local function disp_property(
 					value = vim.deepcopy(value_ref),
 				}
 			end
-			when_done(true)
-			props = properties_table[name]
-			value_ref = props and vim.deepcopy(props.value) or value_ref
-			if not value_ref[index] then
-				index = math.max(1, math.min(#value_ref, index))
+			when_done(not config.config.return_to_class_disp)
+			if not config.config.return_to_class_disp then
+				props = properties_table[name]
+				value_ref = props and vim.deepcopy(props.value) or value_ref
+				if not value_ref[index] then
+					index = math.max(1, math.min(#value_ref, index))
+				end
+				disp_table(
+					nil,
+					value_ref[index],
+					{ function() end },
+					buf,
+					win,
+					value_ref[index],
+					{ index .. "/" .. #value_ref }
+				)
+			else
+				vim.cmd.CloseProperty()
 			end
-			disp_table(
-				nil,
-				value_ref[index],
-				{ function() end },
-				buf,
-				win,
-				value_ref[index],
-				{ index .. "/" .. #value_ref }
-			)
 		end
 
 		assign_command(buf, "ExportProperty", config.config.keybinds.export_property, export_property)

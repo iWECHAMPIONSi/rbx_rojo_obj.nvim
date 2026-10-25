@@ -335,6 +335,7 @@ return {
 		Classes = {
 			"Accoutrement",
 			"AdPortal",
+			"DebugClass",
 			"ExperienceInviteOptions",
 			"RenderingTest",
 			"TeleportOptions",

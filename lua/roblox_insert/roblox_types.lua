@@ -519,6 +519,7 @@ roblox_types.ColorSequence = {
 			{ keypoints = return_val },
 			correct
 	end,
+
 	---@param t any?
 	---@return boolean, boolean, {time: string, R: string, G: string, B: string }[]?
 	reverse = function(t)
@@ -527,14 +528,14 @@ roblox_types.ColorSequence = {
 		end
 		local return_val = {}
 		if type(t.keypoints) ~= "table" then
-			return false, true, return_val
+			return false, false, nil
 		end
 		for _, keypoint in ipairs(t.keypoints) do
 			local key = {}
 			key.time = keypoint.time
 			local valid, _, color = revert_color_3(keypoint.color)
-			if valid then
-				key.color = color
+			if valid and color then
+				key.R, key.G, key.B = color.R, color.G, color.B
 				table.insert(return_val, key)
 			end
 		end
@@ -946,6 +947,14 @@ roblox_types.NumberSequence = {
 		return true, true, return_val
 	end,
 }
+local default_table = {
+	density = "Default",
+	friction = "Default",
+	elasticity = "Default",
+	frictionWeight = "Default",
+	elasticityWeight = "Default",
+	acousticAbsorption = "Default",
+}
 
 roblox_types.PhysicalProperties = {
 	lua_type = "table",
@@ -961,10 +970,16 @@ roblox_types.PhysicalProperties = {
 	---@return boolean, table|string?, {density: string, friction: string, elasticity: string, frictionWeight: string, elasticityWeight: string, acousticAbsorption: string}?
 	verification = function(t)
 		local tmp = vim.deepcopy(t)
+
 		if next(t) == nil then
-			return true, "Default"
+			return true, "Default", default_table
 		end
 		local return_val = {}
+		for _, v in pairs(t) do
+			if v == "Default" then
+				return true, "Default", default_table
+			end
+		end
 		return_val.density = clamp(t.density, 0.0001, 100.0, 0.5)
 		tmp.density = tostring(return_val.density)
 		return_val.friction = clamp(t.friction, 0.0, 2.0, 1.0)
@@ -984,7 +999,7 @@ roblox_types.PhysicalProperties = {
 	reverse = function(t)
 		if type(t) ~= "table" then
 			if t == "Default" then
-				return true, true, {}
+				return true, true, default_table
 			end
 			return false, false, nil
 		end
@@ -1159,7 +1174,7 @@ roblox_types.UDim = {
 		end
 		if indexes == 2 then
 			return_val = { return_val.Scale, return_val.Offset }
-			return true, return_val, { Scale = tostring(return_val.Scale), Offset = tostring(return_val.Offset) }
+			return true, return_val, { Scale = tostring(return_val[1]), Offset = tostring(return_val[2]) }
 		end
 		return false
 	end,

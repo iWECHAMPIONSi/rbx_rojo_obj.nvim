@@ -133,8 +133,9 @@ local desc = {
 	NextConfig = "Displays/selects the next class config",
 	EnterList = "Enters into the Class list",
 	CloseProperty = "Exits the property editor without saving changes",
-	SaveProperty = "Validates and saves the edited property",
+	ExportProperty = "Validates and saves the edited property",
 	SelectField = "Selects the highlighted field",
+	SelectPropertyField = "Selects the highlighted property field",
 	NextKeypoint = "Displays the next keypoint",
 	PrevKeypoint = "Displays the previous keypoint",
 }
@@ -232,6 +233,7 @@ local default_keybinds = {
 	},
 
 	actions = {
+		clear_property = { "S" },
 		enter_parent_dir = { "-" },
 		duplicate_config = { "P" },
 		toggle_favorite_class = { "F" },
@@ -257,6 +259,8 @@ local defaults = {
 	confirm_delete = true,
 
 	files_visible = true,
+
+	return_to_class_disp = false,
 
 	allow_overwrite = false,
 	confirm_overwrite = true,
