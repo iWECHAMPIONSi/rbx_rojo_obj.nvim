@@ -109,6 +109,7 @@ local desc = {
 	CreateDir = "Creates a new directory inside the current directory",
 	DeleteDir = "Recursively deletes the highlighted directory",
 	NameFile = "Asks for the name of the file before switching to Class browser",
+	EditClass = "Opens a window to edit the contents of the highlighted class",
 	CloseDirWindow = "Closes the directory browser",
 	ToggleFileVisibility = "Toggles the visibility of non-directory files",
 	EnableFileVisibility = "Enables the visibility of non-directory files",
