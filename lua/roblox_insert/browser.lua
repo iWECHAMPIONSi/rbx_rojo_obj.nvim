@@ -101,26 +101,12 @@ m.create_window = create_window
 ---@param dimensions table
 ---@param when_done function
 ---@param enumeration string?
----@param persistant boolean?
----@param disp_win number?
----@param disp_buf number?
----@param focus_win number?
----@return number?, number?
-local function disp_property(
-	t,
-	properties_table,
-	name,
-	dimensions,
-	when_done,
-	enumeration,
-	persistant,
-	disp_win,
-	disp_buf,
-	focus_win
-)
-	if persistant and not disp_win then
+---@param disp boolean
+---@param focus_win number
+local function disp_property(t, properties_table, name, dimensions, when_done, enumeration, disp, focus_win)
+	if not dimensions.win then
 		dimensions.title = "Property Editor"
-		dimensions.focus = false
+		dimensions.focus = true
 		local buf, win = create_window(dimensions)
 		local function close_property()
 			vim.api.nvim_set_current_win(focus_win)
@@ -134,9 +120,10 @@ local function disp_property(
 
 		assign_command(buf, "CloseProperty", config.config.keybinds.close_property, close_property)
 
-		return buf, win
-	elseif persistant then
-		vim.api.nvim_win_set_config(disp_win, {
+		dimensions.buf, dimensions.win = buf, win
+		return
+	else
+		vim.api.nvim_win_set_config(dimensions.win, {
 			title = t,
 		})
 	end
@@ -188,47 +175,87 @@ local function disp_property(
 	end
 
 	if value_type.lua_type == "enum" then
-		create_input(name, t, properties_table[name] and properties_table[name].value or nil, function(value)
-			local success, val = value_type.verification(enumeration, value)
-			if success then
-				if val == nil then
-					properties_table[name] = nil
-				else
-					properties_table[name] = {
-						json = {
-							Enum = val,
-						},
-						value = value,
-					}
-				end
-			end
-			when_done()
-		end)
-		return
-	end
-
-	if value_type.lua_type ~= "table" and value_type.lua_type ~= "nested table" then
-		create_input(
-			value_type.fields[1],
-			t,
-			properties_table[name] and properties_table[name].value or nil,
-			function(value)
-				local success, val = value_type.verification(value)
+		vim.api.nvim_set_option_value("modifiable", true, { buf = dimensions.buf })
+		vim.api.nvim_buf_set_lines(
+			dimensions.buf,
+			0,
+			-1,
+			false,
+			{ "Value: " .. (properties_table[name] and properties_table[name].value or "") }
+		)
+		vim.api.nvim_set_option_value("modifiable", false, { buf = dimensions.buf })
+		if not disp then
+			create_input(name, t, properties_table[name] and properties_table[name].value or nil, function(value)
+				local success, val = value_type.verification(enumeration, value)
 				if success then
 					if val == nil then
 						properties_table[name] = nil
 					else
 						properties_table[name] = {
 							json = {
-								[t] = val,
+								Enum = val,
 							},
 							value = value,
 						}
 					end
 				end
+				vim.api.nvim_set_option_value("modifiable", true, { buf = dimensions.buf })
+				vim.api.nvim_buf_set_lines(
+					dimensions.buf,
+					0,
+					-1,
+					false,
+					{ "Value: " .. (properties_table[name] and properties_table[name].value or "") }
+				)
+				vim.api.nvim_set_option_value("modifiable", false, { buf = dimensions.buf })
 				when_done()
-			end
+			end)
+		end
+		return
+	end
+
+	if value_type.lua_type ~= "table" and value_type.lua_type ~= "nested table" then
+		vim.api.nvim_set_option_value("modifiable", true, { buf = dimensions.buf })
+		vim.api.nvim_buf_set_lines(
+			dimensions.buf,
+			0,
+			-1,
+			false,
+			{ "Value: " .. (properties_table[name] and properties_table[name].value or "") }
 		)
+		vim.api.nvim_set_option_value("modifiable", false, { buf = dimensions.buf })
+		if not disp then
+			create_input(
+				value_type.fields[1],
+				t,
+				properties_table[name] and properties_table[name].value or nil,
+				function(value)
+					local success, val = value_type.verification(value)
+					if success then
+						if val == nil then
+							properties_table[name] = nil
+						else
+							properties_table[name] = {
+								json = {
+									[t] = val,
+								},
+								value = value,
+							}
+						end
+					end
+					vim.api.nvim_set_option_value("modifiable", true, { buf = dimensions.buf })
+					vim.api.nvim_buf_set_lines(
+						dimensions.buf,
+						0,
+						-1,
+						false,
+						{ "Value: " .. (properties_table[name] and properties_table[name].value or "") }
+					)
+					vim.api.nvim_set_option_value("modifiable", false, { buf = dimensions.buf })
+					when_done()
+				end
+			)
+		end
 		return
 	end
 
@@ -237,28 +264,14 @@ local function disp_property(
 		local value_ref = {}
 		local props = properties_table[name]
 
-		local buf, win
-		if not persistant then
-			dimensions.title = t
-			dimensions.focus = true
-			buf, win = create_window(dimensions)
-		else
-			buf, win = disp_buf, disp_win
+		local buf, win = dimensions.buf, dimensions.win
+		if not disp then
 			vim.api.nvim_set_current_win(win)
 		end
 		if props and props.value then
 			value_ref = vim.deepcopy(props.value)
 		end
 		disp_table(props, value_ref, field_ref, buf, win, nil, nil)
-
-		if not persistant then
-			local function close_property()
-				vim.api.nvim_win_close(win, true)
-				when_done()
-			end
-
-			assign_command(buf, "CloseProperty", config.config.keybinds.close_property, close_property)
-		end
 
 		local function export_property()
 			local valid, value, validated_table = value_type.verification(value_ref)
@@ -296,13 +309,8 @@ local function disp_property(
 		local value_ref = props and vim.deepcopy(props.value) or { {} }
 
 		local index = 1
-		local buf, win
-		if not persistant then
-			dimensions.title = t
-			dimensions.focus = true
-			buf, win = create_window(dimensions)
-		else
-			buf, win = disp_buf, disp_win
+		local buf, win = dimensions.buf, dimensions.win
+		if not disp then
 			vim.api.nvim_set_current_win(win)
 		end
 		disp_table(
@@ -354,15 +362,6 @@ local function disp_property(
 		end
 
 		assign_command(buf, "NextKeypoint", config.config.keybinds.next_keypoint, next_keypoint)
-
-		if not persistant then
-			local function close_property()
-				vim.api.nvim_win_close(win, true)
-				when_done()
-			end
-
-			assign_command(buf, "CloseProperty", config.config.keybinds.close_property, close_property)
-		end
 
 		local function export_property()
 			local valid, value, validated_table = value_type.verification(value_ref)
@@ -705,9 +704,6 @@ local function generate_dimensions(name, path, visual_path)
 			end,
 		},
 
-		-- TODO
-		-- update codebase to match current documentation
-
 		class_edit_box = {
 			width = math.ceil(width / 2) - 1,
 			height = height - 6,
@@ -744,7 +740,7 @@ local function generate_dimensions(name, path, visual_path)
 				{ "├", "FloatBorder" },
 				{ "│", "FloatBorder" },
 			},
-			keybinds = function(buf, win, d_buf, d_win, p_buf, p_win, s_win)
+			keybinds = function(buf, win, d_buf, d_win, p_buf, p_win, s_win, class_edit_box)
 				local function choose_new_dir()
 					local args = dir_select.generate_dimensions()
 					if not args then
@@ -815,11 +811,12 @@ local function generate_dimensions(name, path, visual_path)
 						return
 					end
 					if class_list_ref[line].t == "class" then
+						disp_property("", {}, "", class_edit_box, function() end, nil, true, d_win)
 						current_class = class_list_ref[line].name
 						vim.api.nvim_set_current_win(d_win)
 						disp_class(d_buf, class_list_ref[line].name, true)
 					elseif class_list_ref[line].t == "category" then
-						modify_class_list(buf, class_list_ref[line].name, line)
+						modify_class_list(buf, class_list_ref[line].name, line, false)
 					end
 				end
 
@@ -837,7 +834,7 @@ local function generate_dimensions(name, path, visual_path)
 
 						if ref and ref.t == "class" then
 							current_class = ref.name
-							disp_class(d_buf, ref.name)
+							disp_class(d_buf, ref.name, false)
 						end
 					end,
 				})
@@ -935,8 +932,6 @@ local function generate_dimensions(name, path, visual_path)
 				p_buf,
 				p_win,
 				edit_mode,
-				e_win,
-				e_buf,
 				focus_win,
 				edit_class,
 				edit_path
@@ -1001,7 +996,10 @@ local function generate_dimensions(name, path, visual_path)
 						data.saved_object_configs[current_class].index = prev_index
 					end
 					vim.api.nvim_win_close(win, true)
-					vim.api.nvim_win_close(l_win or e_win, true)
+					if l_win then
+						vim.api.nvim_win_close(l_win, true)
+					end
+					vim.api.nvim_win_close(class_edit_box.win, true)
 					vim.api.nvim_win_close(s_win, true)
 					vim.api.nvim_win_close(p_win, true)
 					if focus_win then
@@ -1021,7 +1019,7 @@ local function generate_dimensions(name, path, visual_path)
 								if (not edit_class) and prop.saved_props.name then
 									data.save_object_configs()
 								end
-								disp_class(buf, current_class)
+								disp_class(buf, current_class, true)
 							end
 						else
 							local function when_done(stay)
@@ -1053,15 +1051,60 @@ local function generate_dimensions(name, path, visual_path)
 								class_edit_box,
 								when_done,
 								prop.enum,
-								edit_mode,
-								e_win,
-								e_buf
+								false,
+								win
 							)
 						end
 					end
 				end
 
 				assign_command(buf, "SelectProperty", config.config.keybinds.select_property, select_property)
+
+				vim.api.nvim_create_autocmd("CursorMoved", {
+					buffer = buf,
+					callback = function()
+						if not vim.api.nvim_win_is_valid(win) then
+							return
+						end
+
+						local line = vim.api.nvim_win_get_cursor(win)[1]
+						local prop = properties_list_ref[line]
+						local function when_done(stay)
+							local pre = prop.props[prop.name] and prop.props[prop.name].json and " *" or "  "
+							local lstr = pre .. prop.name .. ": "
+							if prop.t == "Enum" then
+								lstr = lstr .. "Enum."
+							end
+							lstr = lstr .. prop.t
+							if #prop.tags > 0 then
+								local tag_str = " [Tags: " .. table.concat(prop.tags, ", ") .. "]"
+
+								lstr = lstr .. tag_str
+							end
+							vim.api.nvim_set_option_value("modifiable", true, { buf = buf })
+							vim.api.nvim_buf_set_lines(buf, line - 1, line, false, { lstr })
+							vim.api.nvim_set_option_value("modifiable", false, { buf = buf })
+							if not stay then
+								vim.api.nvim_set_current_win(win)
+							end
+							if (not edit_class) and prop.saved_props.name then
+								data.save_object_configs()
+							end
+						end
+						if prop.t ~= "name" and prop.t ~= "config" and prop.t ~= "init" then
+							disp_property(
+								prop.t,
+								prop.props,
+								prop.name,
+								class_edit_box,
+								when_done,
+								prop.enum,
+								true,
+								win
+							)
+						end
+					end,
+				})
 
 				local function export_class()
 					local saved_object_properties = data.saved_object_configs[current_class]
@@ -1254,12 +1297,16 @@ local function generate_dimensions(name, path, visual_path)
 					end
 
 					assign_command(buf, "DeleteConfig", config.config.keybinds.delete_config, delete_config)
-				end
-				local function enter_list()
-					vim.api.nvim_set_current_win(l_win or e_win)
-				end
 
-				assign_command(buf, "EnterList", config.config.keybinds.class_enter_list, enter_list)
+					local function enter_list()
+						vim.api.nvim_win_close(class_edit_box.win, true)
+						class_edit_box.win = nil
+						class_edit_box.buf = nil
+						vim.api.nvim_set_current_win(l_win)
+					end
+
+					assign_command(buf, "EnterList", config.config.keybinds.class_enter_list, enter_list)
+				end
 			end,
 		},
 	}

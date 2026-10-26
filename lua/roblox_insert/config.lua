@@ -181,11 +181,11 @@ local default_keybinds = {
 		select = {
 			keybinds = { "<CR>" },
 			actions = {
+				"search_enter_list",
 				"select_class",
 				"select_dir",
 				"select_property",
 				"select_property_field",
-				"search_enter_list",
 			},
 		},
 
@@ -193,8 +193,8 @@ local default_keybinds = {
 			keybinds = { "Q" },
 			actions = {
 				"close_browser_window",
-				"close_input",
 				"close_dir_window",
+				"close_input",
 				"close_property",
 			},
 		},
@@ -233,17 +233,18 @@ local default_keybinds = {
 	},
 
 	actions = {
-		clear_property = { "S" },
-		enter_parent_dir = { "-" },
-		duplicate_config = { "P" },
-		toggle_favorite_class = { "F" },
-		start_search = { "/" },
 		choose_new_dir = { "d" },
-		create_dir = { "d" },
 		class_enter_list = { "<Esc>" },
+		clear_property = { "S" },
+		create_dir = { "d" },
+		duplicate_config = { "P" },
+		edit_class = { "E" },
+		enter_parent_dir = { "-" },
 		name_class_config = { "C" },
-		toggle_file_visibility = { "H" },
 		name_file = { "%" },
+		start_search = { "/" },
+		toggle_favorite_class = { "F" },
+		toggle_file_visibility = { "H" },
 	},
 }
 
@@ -260,7 +261,7 @@ local defaults = {
 
 	files_visible = true,
 
-	return_to_class_disp = false,
+	return_to_class_disp = true,
 
 	allow_overwrite = false,
 	confirm_overwrite = true,

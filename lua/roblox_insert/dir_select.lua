@@ -523,17 +523,14 @@ local function generate_dimensions()
 						create_window(ui_args.search_bar)
 						create_window(ui_args.path_bar)
 						create_window(ui_args.class_display)
-						ui_args.class_edit_box.focus = true
-						ui_args.class_edit_box.buf, ui_args.class_edit_box.win = disp_property(
-							selection.class,
-							nil,
-							selection.name,
+						disp_property(
+							"",
+							{},
+							"",
 							ui_args.class_edit_box,
-							nil,
+							function() end,
 							nil,
 							true,
-							nil,
-							nil,
 							ui_args.class_display.win
 						)
 
@@ -545,14 +542,12 @@ local function generate_dimensions()
 						ui_args.class_display.keybinds(
 							ui_args.class_display.buf,
 							ui_args.class_display.win,
-							ui_args.class_edit_box,
-							ui_args.class_list.win,
+							nil,
+							nil,
 							ui_args.search_bar.win,
 							ui_args.path_bar.buf,
 							ui_args.path_bar.win,
 							true,
-							ui_args.class_edit_box.win,
-							ui_args.class_edit_box.buf,
 							win,
 							selection.class,
 							file_path
