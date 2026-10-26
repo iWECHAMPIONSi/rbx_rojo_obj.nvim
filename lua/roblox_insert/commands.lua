@@ -9,7 +9,7 @@ local m = {}
 ---@param file_name string
 ---@param class string
 ---@return nil
-local function create_file(file_name, class, dir)
+local function create_file(file_name, class, directory)
 	if type(file_name) ~= "string" then
 		vim.notify("name of the file must be a valid string", vim.log.levels.ERROR)
 		return
@@ -19,12 +19,12 @@ local function create_file(file_name, class, dir)
 		vim.notify("name of the class must be a string", vim.log.levels.ERROR)
 	end
 
-	writer.create_file(file_name, class, {}, dir)
+	writer.create_file(file_name, class, {}, directory)
 end
 
 m.create_file = create_file
 
-local function open_browser()
+local function open_browser(cwd)
 	local args = dir.generate_dimensions()
 	if not args then
 		return
@@ -77,7 +77,20 @@ local function open_browser()
 		dir.make_dir_windows(args.path_bar)
 		dir.make_dir_windows(args.directory)
 
-		args.directory.keybinds(args.directory.buf, args.directory.win, args.path_bar.buf, args.path_bar.win, foo)
+		args.directory.keybinds(
+			args.directory.buf,
+			args.directory.win,
+			args.path_bar.buf,
+			args.path_bar.win,
+			foo,
+			nil,
+			nil,
+			browser.generate_dimensions,
+			browser.create_window,
+			browser.disp_property,
+			browser.disp_class,
+			cwd
+		)
 	end)
 end
 

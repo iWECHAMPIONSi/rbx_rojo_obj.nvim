@@ -40,6 +40,8 @@ require('rbx_rojo_obj').setup({
 
     files_visible = true, -- If non-directory files are visible be default in the directory browser if enabled
 
+    return_to_class_disp = true, -- Switches cursor to Class Display when saving a property
+
     allow_overwrite = false, -- If it will allow for you to create a file or directory with the same name as one in the current directory if enabled
     confirm_overwrite = true, -- same as confirm_delete but for overwriting a file if enabled and allow_overwrite is enabled
 
@@ -111,6 +113,7 @@ all actions/commands are in `normal` mode
 | delete_dir | `Directory Browser` | Recursively deletes the highlighted directory | `D` | `:DeleteDir` |
 | rename_dir | `Directory Browser` | Renames the highlighted file or directory | `R` | `:RenameDir` |
 | name_file | `Directory Browser` | Asks for the name of the file before switching to Class browser | `%` | `:NameFile` |
+| edit_class | `Directory Browser` | Opens a window to edit the contents of the highlighted class | `E` | `:EditClass` |
 | close_dir_window | `Directory Browser` | Closes the directory browser | `Q` | `:CloseDirWindow` |
 | toggle_file_visibility | `Directory Browser` | Toggles the visibility of non-directory files | `H` | `:ToggleFileVisibility` |
 | enable_file_visibility | `Directory Browser` | Enables the visibility of non-directory files | `Not Bound` | `:EnableFileVisibility` |
@@ -193,9 +196,9 @@ local default_keybinds = {
             actions = {
                 "select_class",
                 "select_dir",
+                "search_enter_list",
                 "select_property",
                 "select_property_field",
-                "search_enter_list",
             },
         },
 
@@ -203,8 +206,8 @@ local default_keybinds = {
             keybinds = { "Q" },
             actions = {
                 "close_browser_window",
-                "close_input",
                 "close_dir_window",
+                "close_input",
                 "close_property",
             },
         },
@@ -236,23 +239,24 @@ local default_keybinds = {
         rename = {
             keybinds = { "R" },
             actions = {
-                "rename_file",
                 "rename_dir",
+                "rename_file",
             },
         },
     },
 
     actions = {
-        enter_parent_dir = { "-" },
-        duplicate_config = { "P" },
-        toggle_favorite_class = { "F" },
-        start_search = { "/" },
         choose_new_dir = { "d" },
-        create_dir = { "d" },
         class_enter_list = { "<Esc>" },
+        create_dir = { "d" },
+        duplicate_config = { "P" },
+        edit_class = { "E" },
+        enter_parent_dir = { "-" },
         name_class_config = { "C" },
-        toggle_file_visibility = { "H" },
         name_file = { "%" },
+        start_search = { "/" },
+        toggle_file_visibility = { "H" },
+        toggle_favorite_class = { "F" },
     },
 }
 ```

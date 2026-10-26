@@ -1,6 +1,5 @@
 import json
 from copy import deepcopy
-from typing import Any
 
 superclass_dict = {}
 
@@ -352,6 +351,7 @@ def load_dict(nest, nested_classes):
         elif (
             not any(item in k.lower() for item in blacklisted_names)
             and not k in blacklisted_classes
+            and not k == "DebugClass"
         ):
             for name in nest[k]["properties"]:
                 if not "Tags" in nest[k]["properties"][name]:
@@ -449,13 +449,44 @@ for c, i in superclass_structure.items():
 
 value_types = []
 
-for i in dict_list["Classes"].values():
+most_properties = 0
+class_with = None
+unique_types = []
+class_types = []
+particle_emitter = [
+    "ContentId",
+    "Content",
+    "String",
+    "NumberRange",
+    "Vector2",
+    "Bool",
+    "Int32",
+    "Float32",
+    "ColorSequence",
+    "Vector3",
+    "NumberSequence",
+]
+
+
+for k, i in dict_list["Classes"].items():
     for p in i["Properties"].values():
         if p["ValueType"]["Category"] != "Enum":
             value_types.append(p["ValueType"]["Name"])
+            if not p["ValueType"]["Name"] in particle_emitter:
+                unique_types.append(p["ValueType"]["Name"])
+    if len(set(unique_types)) > most_properties:
+        class_with = k
+        most_properties = len(set(unique_types))
+        class_types = set(unique_types)
+
+    unique_types = []
 value_types = list(set(value_types))
 value_types.sort()
 print(value_types)
+print(len(value_types))
+
+print(f"{class_with}: {most_properties}")
+print(class_types)
 
 with open(script_dir + "/" + "data.json", "w") as file:
     json.dump(dict_list, file, indent=4)

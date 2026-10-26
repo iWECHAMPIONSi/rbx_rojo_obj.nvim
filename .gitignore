@@ -1,6 +1,7 @@
 *.*
 !*.lua
 !README.md
+!CHANGELOG.md
 !.gitignore
 !data.json
 !*.py

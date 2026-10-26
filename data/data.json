@@ -603,6 +603,120 @@
                 "Instance"
             ]
         },
+        "AnimationPlayer": {
+            "Properties": {
+                "AnimationContent": {
+                    "Category": "Image",
+                    "MemberType": "Property",
+                    "Tags": [],
+                    "ValueType": {
+                        "Category": "DataType",
+                        "Name": "Content"
+                    }
+                },
+                "AutoPlay": {
+                    "Category": "Playback",
+                    "MemberType": "Property",
+                    "Tags": [],
+                    "ValueType": {
+                        "Category": "Primitive",
+                        "Name": "Bool"
+                    }
+                },
+                "CurrentFrame": {
+                    "Category": "Playback",
+                    "MemberType": "Property",
+                    "Tags": [
+                        "NotReplicated"
+                    ],
+                    "ValueType": {
+                        "Category": "Primitive",
+                        "Name": "Int32"
+                    }
+                },
+                "Enabled": {
+                    "Category": "Playback",
+                    "MemberType": "Property",
+                    "Tags": [],
+                    "ValueType": {
+                        "Category": "Primitive",
+                        "Name": "Bool"
+                    }
+                },
+                "Loop": {
+                    "Category": "Playback",
+                    "MemberType": "Property",
+                    "Tags": [],
+                    "ValueType": {
+                        "Category": "Primitive",
+                        "Name": "Bool"
+                    }
+                },
+                "Speed": {
+                    "Category": "Playback",
+                    "MemberType": "Property",
+                    "Tags": [],
+                    "ValueType": {
+                        "Category": "Primitive",
+                        "Name": "Float32"
+                    }
+                },
+                "TimePosition": {
+                    "Category": "Playback",
+                    "MemberType": "Property",
+                    "Tags": [
+                        "NotReplicated"
+                    ],
+                    "ValueType": {
+                        "Category": "Primitive",
+                        "Name": "Float64"
+                    }
+                },
+                "Track": {
+                    "Category": "Playback",
+                    "MemberType": "Property",
+                    "Tags": [],
+                    "ValueType": {
+                        "Category": "Primitive",
+                        "Name": "String"
+                    }
+                },
+                "Archivable": {
+                    "Category": "Behavior",
+                    "MemberType": "Property",
+                    "Tags": [],
+                    "ValueType": {
+                        "Category": "Primitive",
+                        "Name": "Bool"
+                    }
+                },
+                "Name": {
+                    "Category": "Data",
+                    "MemberType": "Property",
+                    "Tags": [],
+                    "ValueType": {
+                        "Category": "Primitive",
+                        "Name": "String"
+                    }
+                },
+                "Sandboxed": {
+                    "Category": "Permissions",
+                    "MemberType": "Property",
+                    "Tags": [
+                        "NotReplicated"
+                    ],
+                    "ValueType": {
+                        "Category": "Primitive",
+                        "Name": "Bool"
+                    }
+                }
+            },
+            "Tags": [],
+            "Superclass": "Instance",
+            "NestedClasses": [
+                "Instance"
+            ]
+        },
         "AnimationRigData": {
             "Properties": {
                 "Archivable": {
@@ -2382,6 +2496,15 @@
                     "ValueType": {
                         "Category": "DataType",
                         "Name": "ContentId"
+                    }
+                },
+                "AudioContent": {
+                    "Category": "Asset",
+                    "MemberType": "Property",
+                    "Tags": [],
+                    "ValueType": {
+                        "Category": "DataType",
+                        "Name": "Content"
                     }
                 },
                 "AutoLoad": {
@@ -18832,6 +18955,18 @@
                         "Name": "String"
                     }
                 },
+                "Editor": {
+                    "Category": "State Editing",
+                    "MemberType": "Property",
+                    "Tags": [
+                        "NotReplicated",
+                        "NotScriptable"
+                    ],
+                    "ValueType": {
+                        "Category": "Primitive",
+                        "Name": "Bool"
+                    }
+                },
                 "Enabled": {
                     "Category": "Behavior",
                     "MemberType": "Property",
@@ -18940,6 +19075,18 @@
                     "ValueType": {
                         "Category": "Enum",
                         "Name": "KeyCode"
+                    }
+                },
+                "Editor": {
+                    "Category": "State Editing",
+                    "MemberType": "Property",
+                    "Tags": [
+                        "NotReplicated",
+                        "NotScriptable"
+                    ],
+                    "ValueType": {
+                        "Category": "Primitive",
+                        "Name": "Bool"
                     }
                 },
                 "Forward": {
@@ -19115,6 +19262,18 @@
         },
         "InputContext": {
             "Properties": {
+                "Editor": {
+                    "Category": "State Editing",
+                    "MemberType": "Property",
+                    "Tags": [
+                        "NotReplicated",
+                        "NotScriptable"
+                    ],
+                    "ValueType": {
+                        "Category": "Primitive",
+                        "Name": "Bool"
+                    }
+                },
                 "Enabled": {
                     "Category": "Behavior",
                     "MemberType": "Property",
@@ -26113,6 +26272,15 @@
                         "Name": "Bool"
                     }
                 },
+                "AudioContent": {
+                    "Category": "Asset",
+                    "MemberType": "Property",
+                    "Tags": [],
+                    "ValueType": {
+                        "Category": "DataType",
+                        "Name": "Content"
+                    }
+                },
                 "LoopRegion": {
                     "Category": "Regions",
                     "MemberType": "Property",
@@ -31098,6 +31266,14 @@
             "None": 0,
             "Automatic": 1
         },
+        "AudioSortType": {
+            "Relevance": 1,
+            "MostUsed": 2,
+            "Trending": 3,
+            "RecentlyCreated": 4,
+            "ShortestToLongest": 5,
+            "LongestToShortest": 6
+        },
         "AudioSubType": {
             "Music": 1,
             "SoundEffect": 2
@@ -32095,7 +32271,9 @@
             "Elastic": 7,
             "Exponential": 8,
             "Circular": 9,
-            "Cubic": 10
+            "Cubic": 10,
+            "Bezier": 11,
+            "Spring": 12
         },
         "EditableStatus": {
             "Unknown": 0,
@@ -32446,7 +32624,8 @@
             "Missed": 3,
             "Declined": 4,
             "Failed": 5,
-            "Canceled": 6
+            "Canceled": 6,
+            "NoReason": 7
         },
         "FriendsCallingParticipantErrors": {
             "None": 0,

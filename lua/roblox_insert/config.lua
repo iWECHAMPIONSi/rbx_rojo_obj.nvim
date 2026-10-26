@@ -109,6 +109,7 @@ local desc = {
 	CreateDir = "Creates a new directory inside the current directory",
 	DeleteDir = "Recursively deletes the highlighted directory",
 	NameFile = "Asks for the name of the file before switching to Class browser",
+	EditClass = "Opens a window to edit the contents of the highlighted class",
 	CloseDirWindow = "Closes the directory browser",
 	ToggleFileVisibility = "Toggles the visibility of non-directory files",
 	EnableFileVisibility = "Enables the visibility of non-directory files",
@@ -133,12 +134,17 @@ local desc = {
 	NextConfig = "Displays/selects the next class config",
 	EnterList = "Enters into the Class list",
 	CloseProperty = "Exits the property editor without saving changes",
-	SaveProperty = "Validates and saves the edited property",
+	ExportProperty = "Validates and saves the edited property",
 	SelectField = "Selects the highlighted field",
+	SelectPropertyField = "Selects the highlighted property field",
 	NextKeypoint = "Displays the next keypoint",
 	PrevKeypoint = "Displays the previous keypoint",
 }
 
+---@param buf number
+---@param command_name string
+---@param keybinds {[string]: boolean}?
+---@param func fun(): nil
 local function assign_command(buf, command_name, keybinds, func)
 	local description = desc[command_name]
 
@@ -176,11 +182,11 @@ local default_keybinds = {
 		select = {
 			keybinds = { "<CR>" },
 			actions = {
+				"search_enter_list",
 				"select_class",
 				"select_dir",
 				"select_property",
 				"select_property_field",
-				"search_enter_list",
 			},
 		},
 
@@ -188,8 +194,8 @@ local default_keybinds = {
 			keybinds = { "Q" },
 			actions = {
 				"close_browser_window",
-				"close_input",
 				"close_dir_window",
+				"close_input",
 				"close_property",
 			},
 		},
@@ -228,16 +234,18 @@ local default_keybinds = {
 	},
 
 	actions = {
-		enter_parent_dir = { "-" },
-		duplicate_config = { "P" },
-		toggle_favorite_class = { "F" },
-		start_search = { "/" },
 		choose_new_dir = { "d" },
-		create_dir = { "d" },
 		class_enter_list = { "<Esc>" },
+		clear_property = { "S" },
+		create_dir = { "d" },
+		duplicate_config = { "P" },
+		edit_class = { "E" },
+		enter_parent_dir = { "-" },
 		name_class_config = { "C" },
-		toggle_file_visibility = { "H" },
 		name_file = { "%" },
+		start_search = { "/" },
+		toggle_favorite_class = { "F" },
+		toggle_file_visibility = { "H" },
 	},
 }
 
@@ -254,6 +262,8 @@ local defaults = {
 
 	files_visible = true,
 
+	return_to_class_disp = true,
+
 	allow_overwrite = false,
 	confirm_overwrite = true,
 
@@ -262,6 +272,9 @@ local defaults = {
 
 t.config = vim.deepcopy(defaults)
 
+---@param opts table
+---@param k table
+---@param d boolean
 local function convert_keybind_config(opts, k, d)
 	for _, group in pairs(k.groups) do
 		for _, action in ipairs(group.actions) do
@@ -301,7 +314,7 @@ local function convert_keybind_config(opts, k, d)
 end
 
 local function assign_keybinds(opts)
-	convert_keybind_config(opts, opts.custom_keybinds)
+	convert_keybind_config(opts, opts.custom_keybinds, false)
 	if opts.enable_default_keybinds then
 		convert_keybind_config(opts, default_keybinds, true)
 	end
@@ -309,6 +322,7 @@ end
 
 assign_keybinds(t.config)
 
+---@param opts table?
 local function setup(opts)
 	opts = opts or {}
 	t.config = vim.tbl_deep_extend("force", vim.deepcopy(defaults), opts)

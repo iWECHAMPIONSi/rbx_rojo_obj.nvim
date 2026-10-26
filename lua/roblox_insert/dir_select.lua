@@ -1,26 +1,31 @@
 local config = require("roblox_insert.config")
+local roblox_types = require("roblox_insert.roblox_types")
 local assign_command = config.assign_command
+local data = require("roblox_insert.data")
 local vim = vim
 
 local src_name = config.config.src_name
 local root_dir = nil
 
-local directory_contents = {}
-
 local dir_ref = {
-	{ t = "src", name = src_name },
-	{ t = "parent", name = ".." },
+	{ t = "src", name = src_name .. "/" },
+	{ t = "parent", name = "../" },
 	{ t = nil, name = "./" },
 }
 
 local dir_ref_start = {
-	{ t = "src", name = src_name },
-	{ t = "parent", name = ".." },
+	{ t = "src", name = src_name .. "/" },
+	{ t = "parent", name = "../" },
 	{ t = nil, name = "./" },
 }
 
 local m = {}
 
+---@param field string?
+---@param t string?
+---@param initial_value string?
+---@param on_submit fun(value: string?): nil
+---@param title string?
 local function create_input(field, t, initial_value, on_submit, title)
 	local buf = vim.api.nvim_create_buf(false, true)
 	vim.bo[buf].buftype = "prompt"
@@ -79,6 +84,9 @@ end
 
 m.create_input = create_input
 
+---@param path string
+---@param name string
+---@param on_success fun(): nil
 local function check_name_collision(path, name, on_success)
 	if string.match(name, "%s") then
 		vim.notify("Directory or file name contains spaces", vim.log.levels.ERROR)
@@ -134,21 +142,193 @@ end
 
 m.check_name_collision = check_name_collision
 
+local init_types = {
+	{ "init.luau", "ModuleScript" },
+	{ "init.client.luau", "LocalScript" },
+	{ "init.server.luau", "Script" },
+	{ "init.meta.json" },
+}
+
+---@param path string
+local function check_for_init(path)
+	for _, t in ipairs(init_types) do
+		if vim.uv.fs_stat(vim.fs.joinpath(path, t[1])) then
+			return t[1], t[2], vim.fs.joinpath(path, t[1])
+		end
+	end
+	return nil, nil, nil
+end
+
+---@param buf number
+---@param path_buf number?
+---@param path string
+---@param all boolean
 local function render_new_dir(buf, path_buf, path, all)
-	directory_contents = {}
 	dir_ref = vim.deepcopy(dir_ref_start)
 	local dirs = {}
 
-	for name, kind in vim.fs.dir(path) do
-		table.insert(directory_contents, { t = kind, name = name })
-		if all or kind == "directory" then
-			table.insert(dirs, { t = kind == "directory" and "dir" or nil, name = name })
-		end
+	local function endswith(str, suffix)
+		local matches = string.sub(str, -#suffix) == suffix
+		return matches, matches and string.sub(str, 1, #str - #suffix) or nil
 	end
 
+	local looking_metas = {}
+
+	local metadata = {}
+
+	for name, kind in vim.fs.dir(path) do
+		if kind == "directory" then
+			local t = { t = "dir", name = name }
+			local filename, class, file_path = check_for_init(vim.fs.joinpath(path, name))
+			if filename then
+				if class then
+					t.class = class
+					if vim.uv.fs_stat(vim.fs.joinpath(path, name, "init.meta.json")) then
+						file_path = vim.fs.joinpath(path, name, "init.meta.json")
+					else
+						file_path = nil
+						t.contents = {}
+					end
+				end
+				t.file_path = file_path
+				if file_path then
+					local contents, err = data.load(filename, nil, file_path)
+					if contents then
+						t.class = t.class or contents.className
+						t.contents = contents
+					else
+						vim.notify(err, vim.log.levels.ERROR)
+					end
+				end
+			end
+
+			table.insert(dirs, t)
+		elseif all and kind == "file" then
+			local t = { t = "file", name = name }
+			local ends, n = endswith(name, ".model.json")
+			if ends then
+				t.n = n
+				local contents, err = data.load(name, nil, vim.fs.joinpath(path, name))
+				if contents then
+					t.class = contents.ClassName
+					t.contents = contents
+					t.file_path = vim.fs.joinpath(path, name)
+				else
+					vim.notify(err, vim.log.levels.ERROR)
+				end
+			else
+				ends, n = endswith(name, ".meta.json")
+				if ends then
+					t.n = n
+					assert(n)
+					local contents, err = data.load(name, nil, vim.fs.joinpath(path, name))
+					if contents then
+						t.class = contents.className
+						t.contents = contents
+						t.file_path = vim.fs.joinpath(path, name)
+						metadata[n] = contents
+					else
+						vim.notify(err, vim.log.levels.ERROR)
+					end
+					if not t.class and looking_metas[n] then
+						t.file_path = vim.fs.joinpath(
+							path,
+							n
+								.. (
+									(looking_metas[n] == "Script" and ".server.luau")
+									or (looking_metas[n] == "LocalScript" and ".client.luau")
+									or (looking_metas[n] == "ModuleScript" and ".luau")
+								)
+						)
+						t.class = looking_metas[n]
+					elseif not t.class then
+						looking_metas[n] = true
+					end
+				else
+					ends, n = endswith(name, ".server.luau")
+					if ends then
+						t.n = n
+						t.class = "Script"
+						if looking_metas[n] then
+							t.file_path = vim.fs.joinpath(path, n .. ".meta.json")
+						end
+						if n then
+							looking_metas[n] = t.class
+						end
+					else
+						ends, n = endswith(name, ".client.luau")
+						if ends then
+							t.n = n
+							t.class = "LocalScript"
+							if looking_metas[n] then
+								t.file_path = vim.fs.joinpath(path, n .. ".meta.json")
+							end
+							if n then
+								looking_metas[n] = t.class
+							end
+						else
+							ends, n = endswith(name, ".luau")
+							if ends then
+								t.n = n
+								t.class = "ModuleScript"
+								if looking_metas[n] then
+									t.file_path = vim.fs.joinpath(path, n .. ".meta.json")
+								end
+								if n then
+									looking_metas[n] = t.class
+								end
+							end
+						end
+					end
+				end
+			end
+
+			table.insert(dirs, t)
+		end
+	end
+	for _, dir in ipairs(dirs) do
+		if dir.t == "file" and not dir.class then
+			local meta, n = endswith(dir.name, ".meta.json")
+			if meta then
+				if type(looking_metas[n]) == "string" then
+					dir.file_path = vim.fs.joinpath(
+						path,
+						n
+							.. (
+								(looking_metas[n] == "Script" and ".server.luau")
+								or (looking_metas[n] == "LocalScript" and ".client.luau")
+								or (looking_metas[n] == "ModuleScript" and ".luau")
+							)
+					)
+					dir.class = looking_metas[n]
+				end
+			end
+		elseif dir.t == "file" and string.find(dir.class or "", "Script") and dir.file_path == nil then
+			local _, n
+			if dir.class == "Script" then
+				_, n = endswith(dir.name, ".server.luau")
+			elseif dir.class == "LocalScript" then
+				_, n = endswith(dir.name, ".client.luau")
+			elseif dir.class == "ModuleScript" then
+				_, n = endswith(dir.name, ".luau")
+			end
+			if looking_metas[n] then
+				dir.file_path = vim.fs.joinpath(path, n .. ".meta.json")
+			end
+		end
+		local is_script = dir.t == "file"
+			and dir.name:sub(-5) == ".luau"
+			and (dir.class == "Script" or dir.class == "LocalScript" or dir.class == "ModuleScript")
+		if is_script then
+			dir.contents = metadata[dir.n] or {}
+		end
+	end
 	table.sort(dirs, function(a, b)
 		if (a.t == "dir") ~= (b.t == "dir") then
 			return a.t == "dir"
+		end
+		if (a.class ~= nil) ~= (b.class ~= nil) then
+			return a.class ~= nil
 		end
 		return a.name < b.name
 	end)
@@ -158,7 +338,10 @@ local function render_new_dir(buf, path_buf, path, all)
 	end
 	local str = {}
 	for _, dir in ipairs(dir_ref) do
-		table.insert(str, dir.name .. (dir.t and "/" or ""))
+		table.insert(
+			str,
+			dir.name .. (dir.t == "dir" and "/" or "") .. (dir.class and (" (" .. dir.class .. ")") or "")
+		)
 	end
 
 	vim.api.nvim_set_option_value("modifiable", true, { buf = buf })
@@ -216,7 +399,7 @@ local function generate_dimensions()
 			footer = "Enter: open/select",
 			footer_pos = "left",
 			width = width,
-			height = height - 2,
+			height = height - 6,
 			col = col,
 			row = row + 2,
 			border = {
@@ -229,11 +412,156 @@ local function generate_dimensions()
 				{ "╰", "FloatBorder" },
 				{ "│", "FloatBorder" },
 			},
-			keybinds = function(buf, win, p_buf, p_win, gen_func, name, focus_win)
-				local path = vim.fs.joinpath(root_dir, src_name)
+			keybinds = function(
+				buf,
+				win,
+				p_buf,
+				p_win,
+				gen_func,
+				name,
+				focus_win,
+				gen_args,
+				create_window,
+				disp_property,
+				disp_class,
+				path
+			)
+				local src_dir = vim.fs.normalize(vim.fs.joinpath(root_dir, src_name))
+
+				path = (path and path ~= "") and path or "."
+
+				local base = src_dir
+				if path == src_name or vim.startswith(path, src_name .. "/") then
+					base = root_dir
+				end
+
+				local expanded_path
+				if vim.fn.isabsolutepath(path) == 1 then
+					expanded_path = vim.fs.normalize(path)
+				else
+					expanded_path = vim.fs.normalize(vim.fs.joinpath(base, path))
+				end
+
+				local stat = vim.uv.fs_stat(expanded_path)
+				if stat and stat.type ~= "directory" then
+					expanded_path = vim.fs.dirname(expanded_path)
+				end
+
+				path = (stat and (expanded_path == src_dir or vim.startswith(expanded_path, src_dir .. "/")))
+						and expanded_path
+					or src_dir
+
 				vim.api.nvim_set_current_win(win)
 				local display_all = config.config.files_visible
 				render_new_dir(buf, p_buf, path, display_all)
+
+				local function edit_class(selection)
+					local selected_path = path
+					local _, end_index = string.find(path, root_dir or "", 1, true)
+					local visual_path = string.sub(selected_path, (end_index or 1) + 2)
+					local line = vim.api.nvim_win_get_cursor(win)[1]
+					if line <= 3 then
+						return
+					end
+					local return_val
+					local meta
+					selection = selection or dir_ref[line]
+					local file_path = selection.file_path
+					if selection.t == "dir" then
+						meta = true
+						if selection.class then
+							if not file_path then
+								local tmp = (selection.class == "Script")
+									or (selection.class == "LocalScript")
+									or (selection.class == "ModuleScript")
+								assert(tmp, selection.name .. " (" .. selection.class .. ")  has no metadata")
+								file_path = vim.fs.joinpath(path, selection.name, "init.meta.json")
+							end
+							return_val = roblox_types.convert(selection.class, selection.contents or {})
+						else
+							vim.notify("Cannot edit a directory without metadata", vim.log.levels.ERROR)
+						end
+					else
+						local extention = vim.fn.fnamemodify(selection.name, ":e")
+						if extention == "json" then
+							if selection.name == "init.meta.json" then
+								edit_class({
+									t = "dir",
+									name = vim.fn.namemodify(path, ":t"),
+									contents = selection.contents,
+									class = selection.class,
+									file_path = vim.fs.joinpath(path, selection.name),
+								})
+								return
+							end
+							return_val = roblox_types.convert(selection.class, selection.contents or {})
+						elseif extention == "luau" then
+							if
+								selection.name == "init.luau"
+								or selection.name == "init.client.luau"
+								or selection.name == "init.server.luau"
+							then
+								edit_class({
+									t = "dir",
+									name = vim.fs.basename(path),
+									class = selection.class,
+									contents = selection.contents,
+									file_path = vim.fs.joinpath(path, "init.meta.json"),
+								})
+								return
+							end
+							meta = true
+							return_val = roblox_types.convert(selection.class, selection.contents or {})
+						end
+					end
+					if return_val then
+						local ui_args = gen_args(selection.name, file_path, visual_path)
+						ui_args.search_bar.footer = ""
+						ui_args.search_bar.focus = true
+						ui_args.class_display.focus = true
+						ui_args.path_bar.focus = true
+						create_window(ui_args.search_bar)
+						create_window(ui_args.path_bar)
+						create_window(ui_args.class_display)
+						disp_property(
+							"",
+							{},
+							"",
+							ui_args.class_edit_box,
+							function() end,
+							nil,
+							true,
+							ui_args.class_display.win
+						)
+
+						vim.api.nvim_set_current_win(ui_args.class_display.win)
+
+						local saved_object_properties = data.saved_object_configs[selection.class]
+						saved_object_properties.property_tables[-1] =
+							{ name = selection.name, properties = return_val, init_meta = meta }
+						ui_args.class_display.keybinds(
+							ui_args.class_display.buf,
+							ui_args.class_display.win,
+							nil,
+							nil,
+							ui_args.search_bar.win,
+							ui_args.path_bar.buf,
+							ui_args.path_bar.win,
+							true,
+							win,
+							selection.class,
+							file_path
+						)
+						disp_class(ui_args.class_display.buf, selection.class, true, true)
+					else
+						vim.notify("Failed to convert file contents")
+					end
+				end
+				local function edit_class_caller()
+					edit_class()
+				end
+
+				assign_command(buf, "EditClass", config.config.keybinds.edit_class, edit_class_caller)
 
 				local function select_dir()
 					local line = vim.api.nvim_win_get_cursor(win)[1]
@@ -250,7 +578,7 @@ local function generate_dimensions()
 						end
 						path = vim.fs.dirname(path)
 						render_new_dir(buf, p_buf, path, display_all)
-					else
+					elseif selection.t == "dir" then
 						path = vim.fs.joinpath(path, selection.name)
 						render_new_dir(buf, p_buf, path, display_all)
 					end
@@ -431,6 +759,7 @@ end
 
 m.generate_dimensions = generate_dimensions
 
+---@param on_resolved fun(): nil
 local function resolve_source_directory(on_resolved)
 	local function is_directory(path)
 		local stat = vim.uv.fs_stat(path)
@@ -442,7 +771,6 @@ local function resolve_source_directory(on_resolved)
 			root_dir = nil
 			src_name = config.config.src_name
 			dir_ref = vim.deepcopy(dir_ref_start)
-			directory_contents = {}
 		end
 	end
 
@@ -462,8 +790,8 @@ local function resolve_source_directory(on_resolved)
 		src_name = source_name
 
 		-- Keep the directory browser's root entries current.
-		dir_ref_start[1].name = src_name
-		dir_ref[1].name = src_name
+		dir_ref_start[1].name = src_name .. "/"
+		dir_ref[1].name = src_name .. "/"
 
 		-- Continue after any active input prompt has closed.
 		vim.schedule(function()
