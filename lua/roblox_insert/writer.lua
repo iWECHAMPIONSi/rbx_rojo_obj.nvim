@@ -23,7 +23,7 @@ end
 ---@param class string
 ---@param params {string: any}
 ---@return table?, string?
-local function create_file_data(class, params, meta, init)
+local function create_file_data(class, params, meta, init, external)
 	local class_table = data.raw.Classes[class]
 	if not class_table then
 		local estimate = find_closest_class(class)
@@ -45,6 +45,11 @@ local function create_file_data(class, params, meta, init)
 		file.properties = next(params) and params or vim.empty_dict()
 		if init and not string.find(class, "Script", 1, true) then
 			file.className = class
+		end
+	end
+	if external then
+		for key, value in pairs(external) do
+			file[key] = value
 		end
 	end
 	return file
@@ -145,9 +150,9 @@ t.create_file = create_file
 ---@param params table
 ---@param init boolean?
 ---@param script boolean?
-local function edit_file(class, path, params, init, script)
+local function edit_file(class, path, params, init, script, external)
 	if vim.uv.fs_stat(path) or script then
-		local contents = create_file_data(class, params, script, init)
+		local contents = create_file_data(class, params, script, init, external)
 		if not contents then
 			return nil
 		end
