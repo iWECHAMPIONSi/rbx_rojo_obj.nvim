@@ -1,6 +1,8 @@
 # rbx_rojo_obj
 A keyboard-first Neovim browser for creating Roblox objects and scripts in Rojo projects, editing supported existing objects, and managing class properties.
 
+Requires Neovim 12.0+
+
 ## Installation
 With lazy.nvim:
 ```lua
@@ -25,7 +27,6 @@ You can also create an object directly with `:RbxCreate <name> <class> [director
 https://github.com/user-attachments/assets/d78ab498-875f-4bdb-b2de-fda3a423242a
 
 
-
 ## Configuration
 
 The default configuration is this
@@ -45,7 +46,6 @@ require('rbx_rojo_obj').setup({
         RbxNumber = { default = true, link = "Number" },
         RbxBoolean = { default = true, link = "Boolean" },
         RbxDataType = { default = true, link = "Type" },
-        RbxInactive = { default = true, link = "Comment" },
         RbxSelected = { default = true, link = "CursorLine" },
         RbxBrowser = { default = true, link = "Normal" },
         RbxError = { default = true, link = "DiagnosticError" },
@@ -277,3 +277,9 @@ local default_keybinds = {
     },
 }
 ```
+
+### Roblox API Data
+
+The Roblox API dump is obtained from [MaximumADHD's Roblox API Dump Tool](https://github.com/MaximumADHD/Roblox-API-Dump-Tool).
+
+After extracting the API JSON, rename it to `full_api.json`. The `roblox_api_filter.py` script processes this file to generate the filtered API data used by the plugin.
