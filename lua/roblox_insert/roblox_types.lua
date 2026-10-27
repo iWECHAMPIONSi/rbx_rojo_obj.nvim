@@ -760,8 +760,8 @@ roblox_types.Font = {
 			local valid, msg
 			valid, family, msg = verify_font(non_null_family)
 			tmp.family = t.family
-			if valid then
-				return_val.family = "rbxasset://fonts/families/" .. non_null_family .. ".json"
+			if valid and family then
+				return_val.family = "rbxasset://fonts/families/" .. family .. ".json"
 			else
 				return false, nil, nil, msg
 			end
@@ -933,13 +933,13 @@ roblox_types.NumberSequence = {
 			return tonumber(a.time) < tonumber(b.time)
 		end)
 		local msg
-		if not #return_val >= 2 then
+		if #return_val < 2 then
 			msg = "Must have minimum of 2 keypoints"
-		elseif not #return_val <= 20 then
+		elseif #return_val > 20 then
 			msg = "Cannot have more than 20 keypoints"
-		elseif not return_val[1].time == 0.0 then
+		elseif return_val[1].time ~= 0.0 then
 			msg = "At least one keypoint must have a time value of 0"
-		elseif not return_val[#return_val].time == 1.0 then
+		elseif return_val[#return_val].time ~= 1.0 then
 			msg = "At least one keypoint must have a time value of 1.0"
 		end
 		return #return_val >= 2
@@ -1331,6 +1331,10 @@ local function revert(class, json_data)
 	end
 	local return_val = {}
 	for n, d in pairs(json_data.Properties or json_data.properties or {}) do
+		if not (type(d) == "table") then
+			vim.notify("Implicit values not supported, all properties must be explicitly defined", vim.log.levels.ERROR)
+			return nil
+		end
 		return_val[n] = {}
 		local t, value = next(d)
 		if t ~= nil and value ~= nil then
@@ -1341,19 +1345,19 @@ local function revert(class, json_data)
 				if t == "Enum" then
 					enum_name = class_def.Properties[n].ValueType.Name
 					success, valid_type, v = roblox_types[t].reverse(enum_name, value)
+				else
+					success, valid_type, v = roblox_types[t].reverse(value)
 				end
-				success, valid_type, v = roblox_types[t].reverse(value)
 
 				local json_table, valid_value
 				if success or valid_type then
 					if t == "Enum" then
-						roblox_types[t].verification(enum_name, v)
+						local enum_valid = roblox_types[t].verification(enum_name, v)
+						return_val[n].value = enum_valid and v or nil
 					elseif type(value) == "table" then
 						success, json_table, valid_value = roblox_types[t].verification(v)
 						return_val[n].value = success and valid_value or v
 						return_val[n].json = success and json_table and { [t] = json_table } or return_val[n].json
-					elseif t == "Enum" then
-						roblox_types[t].verification(enum_name, v)
 					else
 						success, json_table = roblox_types[t].verification(v)
 						return_val[n].value = success and v or nil

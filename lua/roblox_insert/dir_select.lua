@@ -232,15 +232,7 @@ local function render_new_dir(buf, path_buf, path, all)
 						vim.notify(err, vim.log.levels.ERROR)
 					end
 					if not t.class and looking_metas[n] then
-						t.file_path = vim.fs.joinpath(
-							path,
-							n
-								.. (
-									(looking_metas[n] == "Script" and ".server.luau")
-									or (looking_metas[n] == "LocalScript" and ".client.luau")
-									or (looking_metas[n] == "ModuleScript" and ".luau")
-								)
-						)
+						t.file_path = vim.fs.joinpath(path, n .. ".meta.json")
 						t.class = looking_metas[n]
 					elseif not t.class then
 						looking_metas[n] = true
@@ -292,15 +284,7 @@ local function render_new_dir(buf, path_buf, path, all)
 			local meta, n = endswith(dir.name, ".meta.json")
 			if meta then
 				if type(looking_metas[n]) == "string" then
-					dir.file_path = vim.fs.joinpath(
-						path,
-						n
-							.. (
-								(looking_metas[n] == "Script" and ".server.luau")
-								or (looking_metas[n] == "LocalScript" and ".client.luau")
-								or (looking_metas[n] == "ModuleScript" and ".luau")
-							)
-					)
+					dir.file_path = vim.fs.joinpath(path, n .. ".meta.json")
 					dir.class = looking_metas[n]
 				end
 			end
@@ -313,9 +297,7 @@ local function render_new_dir(buf, path_buf, path, all)
 			elseif dir.class == "ModuleScript" then
 				_, n = endswith(dir.name, ".luau")
 			end
-			if looking_metas[n] then
-				dir.file_path = vim.fs.joinpath(path, n .. ".meta.json")
-			end
+			dir.file_path = vim.fs.joinpath(path, n .. ".meta.json")
 		end
 		local is_script = dir.t == "file"
 			and dir.name:sub(-5) == ".luau"
@@ -497,6 +479,10 @@ local function generate_dimensions()
 					local return_val
 					local meta
 					selection = selection or dir_ref[line]
+					if type(selection.class) ~= "string" then
+						vim.notify("Cannot edit: No recognized Roblox class", vim.log.levels.ERROR)
+						return
+					end
 					local file_path = selection.file_path
 					if selection.t == "dir" then
 						meta = true
@@ -573,7 +559,7 @@ local function generate_dimensions()
 						ui_args.class_display.keybinds(
 							ui_args.class_display.buf,
 							ui_args.class_display.win,
-							nil,
+							ui_args.class_edit_box,
 							nil,
 							ui_args.search_bar.win,
 							ui_args.path_bar.buf,
@@ -584,8 +570,6 @@ local function generate_dimensions()
 							file_path
 						)
 						disp_class(ui_args.class_display.buf, selection.class, true, true)
-					else
-						vim.notify("Failed to convert file contents")
 					end
 				end
 				local function edit_class_caller()

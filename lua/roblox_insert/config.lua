@@ -263,7 +263,6 @@ local defaults = {
 		RbxNumber = { default = true, link = "Number" },
 		RbxBoolean = { default = true, link = "Boolean" },
 		RbxDataType = { default = true, link = "Type" },
-		RbxInactive = { default = true, link = "Comment" },
 		RbxSelected = { default = true, link = "CursorLine" },
 		RbxBrowser = { default = true, link = "Normal" },
 		RbxError = { default = true, link = "DiagnosticError" },
@@ -345,14 +344,9 @@ for group, target in pairs(t.config.highlights) do
 end
 
 t.ns = vim.api.nvim_create_namespace("RbxHighlights")
-
----@param opts table?
-local function setup(opts)
-	opts = opts or {}
-	local custom_highlights = opts.highlights or {}
-
-	t.config = vim.tbl_deep_extend("force", vim.deepcopy(defaults), opts)
-
+local g = vim.api.nvim_create_augroup("RbxRojoObjThemeOverrides", { clear = true })
+local custom_highlights = {}
+local function apply_highlights()
 	for group, target in pairs(t.config.highlights) do
 		local spec = custom_highlights[group] or target
 
@@ -363,6 +357,25 @@ local function setup(opts)
 		vim.api.nvim_set_hl(0, group, spec)
 		t.hl_group[group] = group
 	end
+end
+
+vim.api.nvim_create_autocmd("ColorScheme", {
+	group = g,
+	pattern = "*",
+	callback = function()
+		apply_highlights()
+	end,
+})
+
+---@param opts table?
+local function setup(opts)
+	opts = opts or {}
+	custom_highlights = opts.highlights or {}
+
+	t.config = vim.tbl_deep_extend("force", vim.deepcopy(defaults), opts)
+	assign_keybinds(t.config)
+
+	apply_highlights()
 end
 
 t.setup = setup
