@@ -166,6 +166,7 @@ end
 local function render_new_dir(buf, path_buf, path, all)
 	dir_ref = vim.deepcopy(dir_ref_start)
 	local dirs = {}
+	local highlights = {}
 
 	local function endswith(str, suffix)
 		local matches = string.sub(str, -#suffix) == suffix
@@ -231,15 +232,7 @@ local function render_new_dir(buf, path_buf, path, all)
 						vim.notify(err, vim.log.levels.ERROR)
 					end
 					if not t.class and looking_metas[n] then
-						t.file_path = vim.fs.joinpath(
-							path,
-							n
-								.. (
-									(looking_metas[n] == "Script" and ".server.luau")
-									or (looking_metas[n] == "LocalScript" and ".client.luau")
-									or (looking_metas[n] == "ModuleScript" and ".luau")
-								)
-						)
+						t.file_path = vim.fs.joinpath(path, n .. ".meta.json")
 						t.class = looking_metas[n]
 					elseif not t.class then
 						looking_metas[n] = true
@@ -291,15 +284,7 @@ local function render_new_dir(buf, path_buf, path, all)
 			local meta, n = endswith(dir.name, ".meta.json")
 			if meta then
 				if type(looking_metas[n]) == "string" then
-					dir.file_path = vim.fs.joinpath(
-						path,
-						n
-							.. (
-								(looking_metas[n] == "Script" and ".server.luau")
-								or (looking_metas[n] == "LocalScript" and ".client.luau")
-								or (looking_metas[n] == "ModuleScript" and ".luau")
-							)
-					)
+					dir.file_path = vim.fs.joinpath(path, n .. ".meta.json")
 					dir.class = looking_metas[n]
 				end
 			end
@@ -312,9 +297,7 @@ local function render_new_dir(buf, path_buf, path, all)
 			elseif dir.class == "ModuleScript" then
 				_, n = endswith(dir.name, ".luau")
 			end
-			if looking_metas[n] then
-				dir.file_path = vim.fs.joinpath(path, n .. ".meta.json")
-			end
+			dir.file_path = vim.fs.joinpath(path, n .. ".meta.json")
 		end
 		local is_script = dir.t == "file"
 			and dir.name:sub(-5) == ".luau"
@@ -338,6 +321,28 @@ local function render_new_dir(buf, path_buf, path, all)
 	end
 	local str = {}
 	for _, dir in ipairs(dir_ref) do
+		if dir.t == "dir" or dir.t == "src" or dir.t == "parent" or dir.t == nil then
+			table.insert(highlights, {
+				row = #str,
+				start_col = 0,
+				end_col = dir.t == "dir" and #dir.name or #dir.name - 1,
+				hl_group = config.hl_group.RbxDir,
+			})
+			table.insert(highlights, {
+				row = #str,
+				start_col = dir.t == "dir" and #dir.name or #dir.name - 1,
+				end_col = dir.t == "dir" and #dir.name + 1 or #dir.name,
+				hl_group = config.hl_group.RbxClassify,
+			})
+		end
+		if dir.class then
+			table.insert(highlights, {
+				row = #str,
+				start_col = ((dir.t == "dir") and #dir.name + 3) or #dir.name + 2,
+				end_col = ((dir.t == "dir") and #dir.name + 3 + #dir.class) or #dir.name + 2 + #dir.class,
+				hl_group = config.hl_group.RbxClass,
+			})
+		end
 		table.insert(
 			str,
 			dir.name .. (dir.t == "dir" and "/" or "") .. (dir.class and (" (" .. dir.class .. ")") or "")
@@ -346,7 +351,15 @@ local function render_new_dir(buf, path_buf, path, all)
 
 	vim.api.nvim_set_option_value("modifiable", true, { buf = buf })
 	vim.api.nvim_buf_set_lines(buf, 0, -1, false, str)
+	vim.api.nvim_buf_clear_namespace(buf, config.ns, 0, -1)
 	vim.api.nvim_set_option_value("modifiable", false, { buf = buf })
+
+	for _, hl in ipairs(highlights) do
+		vim.api.nvim_buf_set_extmark(buf, config.ns, hl.row, hl.start_col, {
+			end_col = hl.end_col,
+			hl_group = hl.hl_group,
+		})
+	end
 
 	if path_buf then
 		local _, end_index = string.find(path, root_dir or "", 1, true)
@@ -466,6 +479,10 @@ local function generate_dimensions()
 					local return_val
 					local meta
 					selection = selection or dir_ref[line]
+					if type(selection.class) ~= "string" then
+						vim.notify("Cannot edit: No recognized Roblox class", vim.log.levels.ERROR)
+						return
+					end
 					local file_path = selection.file_path
 					if selection.t == "dir" then
 						meta = true
@@ -542,7 +559,7 @@ local function generate_dimensions()
 						ui_args.class_display.keybinds(
 							ui_args.class_display.buf,
 							ui_args.class_display.win,
-							nil,
+							ui_args.class_edit_box,
 							nil,
 							ui_args.search_bar.win,
 							ui_args.path_bar.buf,
@@ -553,8 +570,6 @@ local function generate_dimensions()
 							file_path
 						)
 						disp_class(ui_args.class_display.buf, selection.class, true, true)
-					else
-						vim.notify("Failed to convert file contents")
 					end
 				end
 				local function edit_class_caller()
@@ -854,6 +869,12 @@ local function make_dir_windows(args)
 		footer = args.footer,
 		footer_pos = args.footer_pos,
 	})
+	vim.wo[win].winhighlight = "NormalFloat:RbxBrowser"
+	if not (args.title == "Select destination directory") then
+		vim.wo[win].cursorline = true
+		vim.wo[win].cursorlineopt = "line"
+		vim.wo[win].winhighlight = vim.wo[win].winhighlight .. ",CursorLine:RbxSelected"
+	end
 
 	args.buf = buf
 	args.win = win

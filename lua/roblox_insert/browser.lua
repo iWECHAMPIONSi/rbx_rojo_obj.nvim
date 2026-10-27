@@ -87,6 +87,12 @@ local function create_window(args)
 		footer = args.footer,
 		footer_pos = args.footer_pos,
 	})
+	vim.wo[win].winhighlight = "NormalFloat:RbxBrowser"
+	if not (args.buffer_type == "prompt") and not args.contents then
+		vim.wo[win].cursorline = true
+		vim.wo[win].cursorlineopt = "line"
+		vim.wo[win].winhighlight = vim.wo[win].winhighlight .. ",CursorLine:RbxSelected"
+	end
 
 	args.win = win
 
@@ -110,9 +116,6 @@ local function disp_property(t, properties_table, name, dimensions, when_done, e
 		local buf, win = create_window(dimensions)
 		local function close_property()
 			vim.api.nvim_set_current_win(focus_win)
-			vim.api.nvim_set_option_value("modifiable", true, { buf = buf })
-			vim.api.nvim_buf_set_lines(buf, 0, -1, false, { "" })
-			vim.api.nvim_set_option_value("modifiable", false, { buf = buf })
 			if when_done then
 				when_done()
 			end
@@ -128,35 +131,137 @@ local function disp_property(t, properties_table, name, dimensions, when_done, e
 		})
 	end
 	local value_type = roblox_types[t]
+	local highlights = {}
+	local err_msg = nil
+	local valid = false
+	local global_ref = nil
 
 	local function disp_table(props, value_ref, field_ref, buf, win, override_table, str)
 		str = str or {}
+		highlights = {}
+		table.insert(str, 1, "Can Export: " .. tostring(valid))
+		table.insert(highlights, 1, {
+			row = 0,
+			start_col = #"Can Export: ",
+			end_col = #"Can Export: " + (valid and #"true" or #"false"),
+			hl_group = config.hl_group.RbxBoolean,
+		})
+		if not valid and err_msg then
+			str[1] = str[1] .. " (" .. err_msg .. ")"
+			table.insert(highlights, 2, {
+				row = 0,
+				start_col = #"Can Export: false (",
+				end_col = #str[1] - 1,
+				hl_group = config.hl_group.RbxError,
+			})
+		end
 		local add_index = #str
 
 		if override_table or props and props.value then
 			for i, field in ipairs(value_type.fields) do
+				table.insert(highlights, {
+					row = i - 1 + add_index,
+					start_col = 0,
+					end_col = #field,
+					hl_group = config.hl_group.RbxProperty,
+				})
 				table.insert(str, field .. ": " .. (value_ref[field] or ""))
+				if value_ref[field] then
+					table.insert(highlights, {
+						row = i - 1 + add_index,
+						start_col = #field + 2,
+						end_col = #str[i + add_index],
+						hl_group = (tonumber(value_ref[field]) and config.hl_group.RbxNumber)
+							or (value_ref[field] == "false" and config.hl_group.RbxBoolean)
+							or (value_ref[field] == "true" and config.hl_group.RbxBoolean)
+							or config.hl_group.RbxValue,
+					})
+				end
 				table.insert(field_ref, function()
 					create_input(field, t, value_ref[field], function(value)
 						value_ref[field] = value or value_ref[field]
 						value_ref[field] = handle_nil(value_ref[field])
 						str[i + add_index] = field .. ": " .. (value_ref[field] or "")
+						local _
+						valid, _, _, err_msg = value_type.verification(global_ref or value_ref)
+						str[1] = "Can Export: " .. tostring(valid)
 						vim.api.nvim_set_option_value("modifiable", true, { buf = buf })
+						vim.api.nvim_buf_clear_namespace(buf, config.ns, 0, 1)
+						vim.api.nvim_buf_clear_namespace(buf, config.ns, i - 1 + add_index, i + add_index)
+						if not valid and err_msg then
+							str[1] = str[1] .. " (" .. err_msg .. ")"
+							vim.api.nvim_buf_set_lines(buf, 0, 1, false, { str[1] })
+							vim.api.nvim_buf_set_extmark(buf, config.ns, 0, #"Can Export: false (", {
+								end_col = #str[1] - 1,
+								hl_group = config.hl_group.RbxError,
+							})
+						else
+							vim.api.nvim_buf_set_lines(buf, 0, 1, false, { str[1] })
+						end
+						vim.api.nvim_buf_set_extmark(buf, config.ns, 0, #"Can Export: ", {
+							end_col = #"Can Export: " + (valid and #"true" or #"false"),
+							hl_group = config.hl_group.RbxBoolean,
+						})
 						vim.api.nvim_buf_set_lines(buf, i - 1 + add_index, i + add_index, false, { str[i + add_index] })
+						vim.api.nvim_buf_set_extmark(buf, config.ns, i - 1 + add_index, 0, {
+							end_col = #field,
+							hl_group = config.hl_group.RbxProperty,
+						})
+						vim.api.nvim_buf_set_extmark(buf, config.ns, i - 1 + add_index, #field + 2, {
+							end_col = #str[i + add_index],
+							hl_group = (tonumber(value_ref[field]) and config.hl_group.RbxNumber)
+								or ((value_ref[field] == "true" or value_ref[field] == "false") and config.hl_group.RbxBoolean)
+								or config.hl_group.RbxValue,
+						})
 						vim.api.nvim_set_option_value("modifiable", false, { buf = buf })
 					end)
 				end)
 			end
 		else
 			for i, field in ipairs(value_type.fields) do
+				table.insert(highlights, {
+					row = i - 1 + add_index,
+					start_col = 0,
+					end_col = #field,
+					hl_group = config.hl_group.RbxProperty,
+				})
 				table.insert(str, field .. ":")
 				table.insert(field_ref, function()
 					create_input(field, t, value_ref[field], function(value)
 						value_ref[field] = value or value_ref[field]
 						value_ref[field] = handle_nil(value_ref[field])
 						str[i + add_index] = field .. ": " .. (value_ref[field] or "")
+						local _
+						valid, _, _, err_msg = value_type.verification(global_ref or value_ref)
+						str[1] = "Can Export: " .. tostring(valid)
 						vim.api.nvim_set_option_value("modifiable", true, { buf = buf })
+						vim.api.nvim_buf_clear_namespace(buf, config.ns, 0, 1)
+						vim.api.nvim_buf_clear_namespace(buf, config.ns, i - 1 + add_index, i + add_index)
+						if not valid and err_msg then
+							str[1] = str[1] .. " (" .. err_msg .. ")"
+							vim.api.nvim_buf_set_lines(buf, 0, 1, false, { str[1] })
+							vim.api.nvim_buf_set_extmark(buf, config.ns, 0, #"Can Export: false (", {
+								end_col = #str[1] - 1,
+								hl_group = config.hl_group.RbxError,
+							})
+						else
+							vim.api.nvim_buf_set_lines(buf, 0, 1, false, { str[1] })
+						end
+						vim.api.nvim_buf_set_extmark(buf, config.ns, 0, #"Can Export: ", {
+							end_col = #"Can Export: " + (valid and #"true" or #"false"),
+							hl_group = config.hl_group.RbxBoolean,
+						})
 						vim.api.nvim_buf_set_lines(buf, i - 1 + add_index, i + add_index, false, { str[i + add_index] })
+						vim.api.nvim_buf_set_extmark(buf, config.ns, i - 1 + add_index, 0, {
+							end_col = #field,
+							hl_group = config.hl_group.RbxProperty,
+						})
+						vim.api.nvim_buf_set_extmark(buf, config.ns, i - 1 + add_index, #field + 2, {
+							end_col = #str[i + add_index],
+							hl_group = (tonumber(value_ref[field]) and config.hl_group.RbxNumber)
+								or ((value_ref[field] == "true" or value_ref[field] == "false") and config.hl_group.RbxBoolean)
+								or config.hl_group.RbxValue,
+						})
 						vim.api.nvim_set_option_value("modifiable", false, { buf = buf })
 					end)
 				end)
@@ -164,7 +269,14 @@ local function disp_property(t, properties_table, name, dimensions, when_done, e
 		end
 		vim.api.nvim_set_option_value("modifiable", true, { buf = buf })
 		vim.api.nvim_buf_set_lines(buf, 0, -1, false, str)
+		vim.api.nvim_buf_clear_namespace(buf, config.ns, 0, -1)
 		vim.api.nvim_set_option_value("modifiable", false, { buf = buf })
+		for _, hl in ipairs(highlights) do
+			vim.api.nvim_buf_set_extmark(buf, config.ns, hl.row, hl.start_col, {
+				end_col = hl.end_col,
+				hl_group = hl.hl_group,
+			})
+		end
 
 		local function select_property_field()
 			local line = vim.api.nvim_win_get_cursor(win)[1]
@@ -174,20 +286,60 @@ local function disp_property(t, properties_table, name, dimensions, when_done, e
 		assign_command(buf, "SelectPropertyField", config.config.keybinds.select_property_field, select_property_field)
 	end
 
-	if value_type.lua_type == "enum" then
+	local function disp_single_field()
+		local str_valid = "Can Export: " .. tostring(valid)
 		vim.api.nvim_set_option_value("modifiable", true, { buf = dimensions.buf })
+		vim.api.nvim_buf_clear_namespace(dimensions.buf, config.ns, 0, -1)
+		if not valid and err_msg then
+			str_valid = str_valid .. " (" .. err_msg .. ")"
+			vim.api.nvim_buf_set_lines(dimensions.buf, 0, -1, false, { str_valid })
+			vim.api.nvim_buf_set_extmark(dimensions.buf, config.ns, 0, #"Can Export: false (", {
+				end_col = #str_valid - 1,
+				hl_group = config.hl_group.RbxError,
+			})
+		else
+			vim.api.nvim_buf_set_lines(dimensions.buf, 0, -1, false, { str_valid })
+		end
+		vim.api.nvim_buf_set_extmark(dimensions.buf, config.ns, 0, #"Can Export: ", {
+			end_col = #"Can Export: " + (valid and #"true" or #"false"),
+			hl_group = config.hl_group.RbxBoolean,
+		})
 		vim.api.nvim_buf_set_lines(
 			dimensions.buf,
-			0,
-			-1,
+			1,
+			2,
 			false,
 			{ "Value: " .. (properties_table[name] and properties_table[name].value or "") }
 		)
+		vim.api.nvim_buf_set_extmark(dimensions.buf, config.ns, 1, 0, {
+			end_col = #"Value: ",
+			hl_group = config.hl_group.RbxProperty,
+		})
+		vim.api.nvim_buf_set_extmark(dimensions.buf, config.ns, 1, #"Value" + 2, {
+			end_col = #("Value: " .. (properties_table[name] and properties_table[name].value or "")),
+			hl_group = (
+				tonumber(properties_table[name] and properties_table[name].value or nil) and config.hl_group.RbxNumber
+			)
+				or (properties_table[name] and (properties_table[name].value == "true" or properties_table[name].value == "false") and config.hl_group.RbxBoolean)
+				or config.hl_group.RbxValue,
+		})
 		vim.api.nvim_set_option_value("modifiable", false, { buf = dimensions.buf })
+	end
+
+	if value_type.lua_type == "enum" then
+		local _
+		if properties_table[name] and properties_table[name].value then
+			valid, _, err_msg = value_type.verification(enumeration, properties_table[name].value)
+		else
+			valid, err_msg = false, nil
+		end
+		disp_single_field()
+
 		if not disp then
 			create_input(name, t, properties_table[name] and properties_table[name].value or nil, function(value)
-				local success, val = value_type.verification(enumeration, value)
-				if success then
+				local val
+				valid, val, err_msg = value_type.verification(enumeration, value)
+				if valid then
 					if val == nil then
 						properties_table[name] = nil
 					else
@@ -199,15 +351,12 @@ local function disp_property(t, properties_table, name, dimensions, when_done, e
 						}
 					end
 				end
-				vim.api.nvim_set_option_value("modifiable", true, { buf = dimensions.buf })
-				vim.api.nvim_buf_set_lines(
-					dimensions.buf,
-					0,
-					-1,
-					false,
-					{ "Value: " .. (properties_table[name] and properties_table[name].value or "") }
-				)
-				vim.api.nvim_set_option_value("modifiable", false, { buf = dimensions.buf })
+				if properties_table[name] and properties_table[name].value then
+					valid, _, err_msg = value_type.verification(enumeration, properties_table[name].value)
+				else
+					valid, err_msg = false, nil
+				end
+				disp_single_field()
 				when_done()
 			end)
 		end
@@ -215,23 +364,22 @@ local function disp_property(t, properties_table, name, dimensions, when_done, e
 	end
 
 	if value_type.lua_type ~= "table" and value_type.lua_type ~= "nested table" then
-		vim.api.nvim_set_option_value("modifiable", true, { buf = dimensions.buf })
-		vim.api.nvim_buf_set_lines(
-			dimensions.buf,
-			0,
-			-1,
-			false,
-			{ "Value: " .. (properties_table[name] and properties_table[name].value or "") }
-		)
-		vim.api.nvim_set_option_value("modifiable", false, { buf = dimensions.buf })
+		local _
+		if properties_table[name] and properties_table[name].value then
+			valid, _, err_msg = value_type.verification(properties_table[name] and properties_table[name].value or nil)
+		else
+			valid, err_msg = false, nil
+		end
+		disp_single_field()
 		if not disp then
 			create_input(
 				value_type.fields[1],
 				t,
 				properties_table[name] and properties_table[name].value or nil,
 				function(value)
-					local success, val = value_type.verification(value)
-					if success then
+					local val
+					valid, val, err_msg = value_type.verification(value)
+					if valid then
 						if val == nil then
 							properties_table[name] = nil
 						else
@@ -243,15 +391,13 @@ local function disp_property(t, properties_table, name, dimensions, when_done, e
 							}
 						end
 					end
-					vim.api.nvim_set_option_value("modifiable", true, { buf = dimensions.buf })
-					vim.api.nvim_buf_set_lines(
-						dimensions.buf,
-						0,
-						-1,
-						false,
-						{ "Value: " .. (properties_table[name] and properties_table[name].value or "") }
-					)
-					vim.api.nvim_set_option_value("modifiable", false, { buf = dimensions.buf })
+					if properties_table[name] and properties_table[name].value then
+						valid, _, err_msg =
+							value_type.verification(properties_table[name] and properties_table[name].value or nil)
+					else
+						valid, err_msg = false, nil
+					end
+					disp_single_field()
 					when_done()
 				end
 			)
@@ -260,7 +406,7 @@ local function disp_property(t, properties_table, name, dimensions, when_done, e
 	end
 
 	if value_type.lua_type == "table" then
-		local field_ref = {}
+		local field_ref = { function() end }
 		local value_ref = {}
 		local props = properties_table[name]
 
@@ -271,10 +417,16 @@ local function disp_property(t, properties_table, name, dimensions, when_done, e
 		if props and props.value then
 			value_ref = vim.deepcopy(props.value)
 		end
+
+		local _
+
+		valid, _, _, err_msg = value_type.verification(value_ref)
+
 		disp_table(props, value_ref, field_ref, buf, win, nil, nil)
 
 		local function export_property()
-			local valid, value, validated_table = value_type.verification(value_ref)
+			local value, validated_table
+			valid, value, validated_table, err_msg = value_type.verification(value_ref)
 			if valid then
 				properties_table[name] = {
 					json = {
@@ -293,11 +445,11 @@ local function disp_property(t, properties_table, name, dimensions, when_done, e
 				if props and props.value then
 					value_ref = vim.deepcopy(props.value)
 				end
-				field_ref = {}
-				disp_table(props, value_ref, field_ref, buf, win)
+				field_ref = { function() end }
 			else
 				vim.cmd.CloseProperty()
 			end
+			disp_table(props, value_ref, field_ref, buf, win)
 		end
 
 		assign_command(buf, "ExportProperty", config.config.keybinds.export_property, export_property)
@@ -313,10 +465,12 @@ local function disp_property(t, properties_table, name, dimensions, when_done, e
 		if not disp then
 			vim.api.nvim_set_current_win(win)
 		end
+		valid, _, _, err_msg = value_type.verification(value_ref)
+		global_ref = value_ref
 		disp_table(
 			nil,
 			value_ref[index],
-			{ function() end },
+			{ function() end, function() end },
 			buf,
 			win,
 			value_ref[index],
@@ -330,11 +484,13 @@ local function disp_property(t, properties_table, name, dimensions, when_done, e
 			if next(value_ref[index]) == nil then
 				table.remove(value_ref, index)
 			end
+			valid, _, _, err_msg = value_type.verification(value_ref)
+			global_ref = value_ref
 			index = index - 1
 			disp_table(
 				nil,
 				value_ref[index],
-				{ function() end },
+				{ function() end, function() end },
 				buf,
 				win,
 				value_ref[index],
@@ -350,10 +506,12 @@ local function disp_property(t, properties_table, name, dimensions, when_done, e
 			end
 			index = index + 1
 			value_ref[index] = value_ref[index] or {}
+			valid, _, _, err_msg = value_type.verification(value_ref)
+			global_ref = value_ref
 			disp_table(
 				nil,
 				value_ref[index],
-				{ function() end },
+				{ function() end, function() end },
 				buf,
 				win,
 				value_ref[index],
@@ -364,7 +522,8 @@ local function disp_property(t, properties_table, name, dimensions, when_done, e
 		assign_command(buf, "NextKeypoint", config.config.keybinds.next_keypoint, next_keypoint)
 
 		local function export_property()
-			local valid, value, validated_table = value_type.verification(value_ref)
+			local value, validated_table
+			valid, value, validated_table, err_msg = value_type.verification(value_ref)
 			if valid then
 				properties_table[name] = {
 					json = {
@@ -384,10 +543,11 @@ local function disp_property(t, properties_table, name, dimensions, when_done, e
 				if not value_ref[index] then
 					index = math.max(1, math.min(#value_ref, index))
 				end
+				global_ref = value_ref
 				disp_table(
 					nil,
 					value_ref[index],
-					{ function() end },
+					{ function() end, function() end },
 					buf,
 					win,
 					value_ref[index],
@@ -439,11 +599,59 @@ local function disp_class(buf, class, inside_buf, edit_class)
 		"As Directory: " .. tostring(saved_properties.init_meta or false),
 		"Properties:",
 	}
+	local highlights = {}
+	table.insert(highlights, {
+		row = 0,
+		start_col = #"Class: ",
+		end_col = #str[1],
+		hl_group = config.hl_group.RbxClass,
+	})
+	table.insert(highlights, {
+		row = 1,
+		start_col = #"Current Config: ",
+		end_col = #str[2],
+		hl_group = config.hl_group.RbxValue,
+	})
+	if not edit_class then
+		table.insert(highlights, {
+			row = 2,
+			start_col = #"Config: ",
+			end_col = #"Config: " + 1 + #tostring(index) - 1,
+			hl_group = config.hl_group.RbxNumber,
+		})
+		table.insert(highlights, {
+			row = 2,
+			start_col = #"Config: " + #tostring(index) + 1,
+			end_col = #str[3],
+			hl_group = config.hl_group.RbxNumber,
+		})
+	else
+		table.insert(highlights, {
+			row = 2,
+			start_col = #"Config: ",
+			end_col = #str[3],
+			hl_group = config.hl_group.RbxNumber,
+		})
+	end
+	table.insert(highlights, {
+		row = 3,
+		start_col = #"As Directory: ",
+		end_col = #str[4],
+		hl_group = config.hl_group.RbxBoolean,
+	})
 
 	for _, p in ipairs(class_def.PropertyKeys) do
 		local pre = properties[p] and properties[p].json and " *" or "  "
 		local lstr = pre .. p .. ": "
 		local ref_table
+		local line = #str
+		table.insert(highlights, {
+			row = line,
+			start_col = 2,
+			end_col = 2 + #p,
+			hl_group = config.hl_group.RbxProperty,
+		})
+
 		if class_def.Properties[p].ValueType.Category == "Enum" then
 			lstr = lstr .. "Enum."
 			if inside_buf then
@@ -455,6 +663,13 @@ local function disp_class(buf, class, inside_buf, edit_class)
 			end
 		end
 		lstr = lstr .. class_def.Properties[p].ValueType.Name
+		local line_len = #lstr
+		table.insert(highlights, {
+			row = line,
+			start_col = 2 + #p + 2,
+			end_col = line_len,
+			hl_group = config.hl_group.RbxDataType,
+		})
 		if #class_def.Properties[p].Tags > 0 then
 			local tag_str = " [Tags: " .. table.concat(class_def.Properties[p].Tags, ", ") .. "]"
 			lstr = lstr .. tag_str
@@ -470,7 +685,14 @@ local function disp_class(buf, class, inside_buf, edit_class)
 
 	vim.api.nvim_set_option_value("modifiable", true, { buf = buf })
 	vim.api.nvim_buf_set_lines(buf, 0, -1, false, str)
+	vim.api.nvim_buf_clear_namespace(buf, config.ns, 0, -1)
 	vim.api.nvim_set_option_value("modifiable", false, { buf = buf })
+	for _, hl in ipairs(highlights) do
+		vim.api.nvim_buf_set_extmark(buf, config.ns, hl.row, hl.start_col, {
+			end_col = hl.end_col,
+			hl_group = hl.hl_group,
+		})
+	end
 end
 
 m.disp_class = disp_class
@@ -484,6 +706,7 @@ local function disp_class_list(buf, init)
 	local str = {}
 	local keys = data.catkeys
 	local categories = data.categories
+	local highlights = {}
 
 	for _, key in ipairs(keys) do
 		if not data.browsable_categories[key] then
@@ -506,6 +729,11 @@ local function disp_class_list(buf, init)
 						pre = "* "
 					end
 					table.insert(str, pre .. class)
+					local line = #str - 1
+					table.insert(highlights, {
+						row = line,
+						text = class,
+					})
 				end
 			end
 		else
@@ -515,10 +743,19 @@ local function disp_class_list(buf, init)
 
 	vim.api.nvim_set_option_value("modifiable", true, { buf = buf })
 	vim.api.nvim_buf_set_lines(buf, 0, -1, false, str)
+	vim.api.nvim_buf_clear_namespace(buf, config.ns, 0, -1)
 	vim.api.nvim_set_option_value("modifiable", false, { buf = buf })
+	for _, hl in ipairs(highlights) do
+		vim.api.nvim_buf_set_extmark(buf, config.ns, hl.row, 2, {
+			end_col = #hl.text + 2,
+			hl_group = config.hl_group.RbxClass,
+		})
+	end
 
 	return str
 end
+
+m.disp_class_list = disp_class_list
 
 ---@param buf number
 ---@param category string
@@ -526,6 +763,7 @@ end
 ---@param favorite boolean
 ---@param added_class string?
 local function modify_class_list(buf, category, line, favorite, added_class)
+	local highlights = {}
 	if not favorite then
 		expanded_categories[category] = not expanded_categories[category]
 	end
@@ -557,13 +795,26 @@ local function modify_class_list(buf, category, line, favorite, added_class)
 					pre = "* "
 				end
 				table.insert(str, pre .. class)
+				local iline = #str - 1
+				table.insert(highlights, {
+					row = iline + line - 1,
+					text = class,
+				})
 			end
 		end
 		vim.api.nvim_set_option_value("modifiable", true, { buf = buf })
 		if favorite then
 			vim.api.nvim_buf_set_lines(buf, line - 1, line + len, false, str)
+			vim.api.nvim_buf_clear_namespace(buf, config.ns, line - 1, line + len)
 		else
 			vim.api.nvim_buf_set_lines(buf, line - 1, line, false, str)
+			vim.api.nvim_buf_clear_namespace(buf, config.ns, line - 1, line)
+		end
+		for _, hl in ipairs(highlights) do
+			vim.api.nvim_buf_set_extmark(buf, config.ns, hl.row, 2, {
+				end_col = #hl.text + 2,
+				hl_group = config.hl_group.RbxClass,
+			})
 		end
 		vim.api.nvim_set_option_value("modifiable", false, { buf = buf })
 	elseif not favorite then
@@ -576,11 +827,10 @@ local function modify_class_list(buf, category, line, favorite, added_class)
 		end
 		vim.api.nvim_set_option_value("modifiable", true, { buf = buf })
 		vim.api.nvim_buf_set_lines(buf, line - 1, line + len, false, { "> " .. category .. "/" })
+		vim.api.nvim_buf_clear_namespace(buf, config.ns, line - 1, line + len)
 		vim.api.nvim_set_option_value("modifiable", false, { buf = buf })
 	end
 end
-
-m.disp_class_list = disp_class_list
 
 ---@param name string
 ---@param path string
@@ -686,7 +936,14 @@ local function generate_dimensions(name, path, visual_path)
 
 						vim.api.nvim_set_option_value("modifiable", true, { buf = l_buf })
 						vim.api.nvim_buf_set_lines(l_buf, 0, -1, false, str)
+						vim.api.nvim_buf_clear_namespace(l_buf, config.ns, 0, -1)
 						vim.api.nvim_set_option_value("modifiable", false, { buf = l_buf })
+						for i = 1, #str do
+							vim.api.nvim_buf_set_extmark(l_buf, config.ns, i - 1, 2, {
+								end_col = #str[i],
+								hl_group = config.hl_group.RbxClass,
+							})
+						end
 					end,
 				})
 
@@ -871,6 +1128,12 @@ local function generate_dimensions(name, path, visual_path)
 							pre .. class,
 						})
 						vim.api.nvim_set_option_value("modifiable", false, { buf = buf })
+						vim.api.nvim_buf_clear_namespace(buf, config.ns, line[1] - 1, line[1])
+
+						vim.api.nvim_buf_set_extmark(buf, config.ns, line[1] - 1, 2, {
+							end_col = #class + 2,
+							hl_group = config.hl_group.RbxClass,
+						})
 					end
 				end
 
@@ -1023,20 +1286,42 @@ local function generate_dimensions(name, path, visual_path)
 							end
 						else
 							local function when_done(stay)
+								local highlights = {
+									{
+										row = line - 1,
+										start_col = 2,
+										end_col = 2 + #prop.name,
+										hl_group = config.hl_group.RbxProperty,
+									},
+								}
 								local pre = prop.props[prop.name] and prop.props[prop.name].json and " *" or "  "
 								local lstr = pre .. prop.name .. ": "
 								if prop.t == "Enum" then
 									lstr = lstr .. "Enum."
 								end
 								lstr = lstr .. prop.t
+								local line_len = #lstr
+								table.insert(highlights, {
+									row = line - 1,
+									start_col = 2 + #prop.name + 2,
+									end_col = line_len,
+									hl_group = config.hl_group.RbxDataType,
+								})
 								if #prop.tags > 0 then
 									local tag_str = " [Tags: " .. table.concat(prop.tags, ", ") .. "]"
 
 									lstr = lstr .. tag_str
 								end
 								vim.api.nvim_set_option_value("modifiable", true, { buf = buf })
+								vim.api.nvim_buf_clear_namespace(buf, config.ns, line - 1, line)
 								vim.api.nvim_buf_set_lines(buf, line - 1, line, false, { lstr })
 								vim.api.nvim_set_option_value("modifiable", false, { buf = buf })
+								for _, hl in ipairs(highlights) do
+									vim.api.nvim_buf_set_extmark(buf, config.ns, hl.row, hl.start_col, {
+										end_col = hl.end_col,
+										hl_group = hl.hl_group,
+									})
+								end
 								if not stay then
 									vim.api.nvim_set_current_win(win)
 								end
@@ -1070,20 +1355,42 @@ local function generate_dimensions(name, path, visual_path)
 						local line = vim.api.nvim_win_get_cursor(win)[1]
 						local prop = properties_list_ref[line]
 						local function when_done(stay)
+							local highlights = {
+								{
+									row = line - 1,
+									start_col = 2,
+									end_col = 2 + #prop.name,
+									hl_group = config.hl_group.RbxProperty,
+								},
+							}
 							local pre = prop.props[prop.name] and prop.props[prop.name].json and " *" or "  "
 							local lstr = pre .. prop.name .. ": "
 							if prop.t == "Enum" then
 								lstr = lstr .. "Enum."
 							end
 							lstr = lstr .. prop.t
+							local line_len = #lstr
+							table.insert(highlights, {
+								row = line - 1,
+								start_col = 2 + #prop.name + 2,
+								end_col = line_len,
+								hl_group = config.hl_group.RbxDataType,
+							})
 							if #prop.tags > 0 then
 								local tag_str = " [Tags: " .. table.concat(prop.tags, ", ") .. "]"
 
 								lstr = lstr .. tag_str
 							end
 							vim.api.nvim_set_option_value("modifiable", true, { buf = buf })
+							vim.api.nvim_buf_clear_namespace(buf, config.ns, line - 1, line)
 							vim.api.nvim_buf_set_lines(buf, line - 1, line, false, { lstr })
 							vim.api.nvim_set_option_value("modifiable", false, { buf = buf })
+							for _, hl in ipairs(highlights) do
+								vim.api.nvim_buf_set_extmark(buf, config.ns, hl.row, hl.start_col, {
+									end_col = hl.end_col,
+									hl_group = hl.hl_group,
+								})
+							end
 							if not stay then
 								vim.api.nvim_set_current_win(win)
 							end
@@ -1163,23 +1470,45 @@ local function generate_dimensions(name, path, visual_path)
 						return
 					end
 					prop.props[prop.name] = nil
-					if not edit_class then
-						data.save_object_configs()
-					end
+					local highlights = {
+						{
+							row = line - 1,
+							start_col = 2,
+							end_col = 2 + #prop.name,
+							hl_group = config.hl_group.RbxProperty,
+						},
+					}
 					local pre = "  "
 					local lstr = pre .. prop.name .. ": "
 					if prop.t == "Enum" then
 						lstr = lstr .. "Enum."
 					end
 					lstr = lstr .. prop.t
+					local line_len = #lstr
+					table.insert(highlights, {
+						row = line - 1,
+						start_col = 2 + #prop.name + 2,
+						end_col = line_len,
+						hl_group = config.hl_group.RbxDataType,
+					})
 					if #prop.tags > 0 then
 						local tag_str = " [Tags: " .. table.concat(prop.tags, ", ") .. "]"
 
 						lstr = lstr .. tag_str
 					end
 					vim.api.nvim_set_option_value("modifiable", true, { buf = buf })
+					vim.api.nvim_buf_clear_namespace(buf, config.ns, line - 1, line)
 					vim.api.nvim_buf_set_lines(buf, line - 1, line, false, { lstr })
 					vim.api.nvim_set_option_value("modifiable", false, { buf = buf })
+					for _, hl in ipairs(highlights) do
+						vim.api.nvim_buf_set_extmark(buf, config.ns, hl.row, hl.start_col, {
+							end_col = hl.end_col,
+							hl_group = hl.hl_group,
+						})
+					end
+					if not edit_class then
+						data.save_object_configs()
+					end
 				end
 
 				assign_command(buf, "ClearProperty", config.config.keybinds.clear_property, clear_property)
