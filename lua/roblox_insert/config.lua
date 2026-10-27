@@ -256,6 +256,22 @@ local defaults = {
 	},
 
 	keybinds = {},
+	highlights = {
+		RbxClass = { default = true, link = "Type" },
+		RbxProperty = { default = true, link = "Identifier" },
+		RbxValue = { default = true, link = "String" },
+		RbxNumber = { default = true, link = "Number" },
+		RbxBoolean = { default = true, link = "Boolean" },
+		RbxDataType = { default = true, link = "Type" },
+		RbxInactive = { default = true, link = "Comment" },
+		RbxSelected = { default = true, link = "CursorLine" },
+		RbxBrowser = { default = true, link = "Normal" },
+		RbxError = { default = true, link = "DiagnosticError" },
+		RbxDir = { default = true, link = "netrwDir" },
+		RbxPlain = { default = true, link = "netrwPlain" },
+		RbxClassify = { default = true, link = "netrwClassify" },
+	},
+
 	src_name = "src",
 
 	confirm_delete = true,
@@ -322,11 +338,31 @@ end
 
 assign_keybinds(t.config)
 
+t.hl_group = {}
+for group, target in pairs(t.config.highlights) do
+	vim.api.nvim_set_hl(0, group, type(target) == "table" and target or defaults.highlights[group])
+	t.hl_group[group] = group
+end
+
+t.ns = vim.api.nvim_create_namespace("RbxHighlights")
+
 ---@param opts table?
 local function setup(opts)
 	opts = opts or {}
+	local custom_highlights = opts.highlights or {}
+
 	t.config = vim.tbl_deep_extend("force", vim.deepcopy(defaults), opts)
-	assign_keybinds(t.config)
+
+	for group, target in pairs(t.config.highlights) do
+		local spec = custom_highlights[group] or target
+
+		if type(spec) == "string" then
+			spec = { link = spec }
+		end
+
+		vim.api.nvim_set_hl(0, group, spec)
+		t.hl_group[group] = group
+	end
 end
 
 t.setup = setup

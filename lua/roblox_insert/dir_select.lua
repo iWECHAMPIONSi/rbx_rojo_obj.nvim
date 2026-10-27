@@ -166,6 +166,7 @@ end
 local function render_new_dir(buf, path_buf, path, all)
 	dir_ref = vim.deepcopy(dir_ref_start)
 	local dirs = {}
+	local highlights = {}
 
 	local function endswith(str, suffix)
 		local matches = string.sub(str, -#suffix) == suffix
@@ -338,6 +339,28 @@ local function render_new_dir(buf, path_buf, path, all)
 	end
 	local str = {}
 	for _, dir in ipairs(dir_ref) do
+		if dir.t == "dir" or dir.t == "src" or dir.t == "parent" or dir.t == nil then
+			table.insert(highlights, {
+				row = #str,
+				start_col = 0,
+				end_col = dir.t == "dir" and #dir.name or #dir.name - 1,
+				hl_group = config.hl_group.RbxDir,
+			})
+			table.insert(highlights, {
+				row = #str,
+				start_col = dir.t == "dir" and #dir.name or #dir.name - 1,
+				end_col = dir.t == "dir" and #dir.name + 1 or #dir.name,
+				hl_group = config.hl_group.RbxClassify,
+			})
+		end
+		if dir.class then
+			table.insert(highlights, {
+				row = #str,
+				start_col = ((dir.t == "dir") and #dir.name + 3) or #dir.name + 2,
+				end_col = ((dir.t == "dir") and #dir.name + 3 + #dir.class) or #dir.name + 2 + #dir.class,
+				hl_group = config.hl_group.RbxClass,
+			})
+		end
 		table.insert(
 			str,
 			dir.name .. (dir.t == "dir" and "/" or "") .. (dir.class and (" (" .. dir.class .. ")") or "")
@@ -346,7 +369,15 @@ local function render_new_dir(buf, path_buf, path, all)
 
 	vim.api.nvim_set_option_value("modifiable", true, { buf = buf })
 	vim.api.nvim_buf_set_lines(buf, 0, -1, false, str)
+	vim.api.nvim_buf_clear_namespace(buf, config.ns, 0, -1)
 	vim.api.nvim_set_option_value("modifiable", false, { buf = buf })
+
+	for _, hl in ipairs(highlights) do
+		vim.api.nvim_buf_set_extmark(buf, config.ns, hl.row, hl.start_col, {
+			end_col = hl.end_col,
+			hl_group = hl.hl_group,
+		})
+	end
 
 	if path_buf then
 		local _, end_index = string.find(path, root_dir or "", 1, true)
@@ -854,6 +885,12 @@ local function make_dir_windows(args)
 		footer = args.footer,
 		footer_pos = args.footer_pos,
 	})
+	vim.wo[win].winhighlight = "NormalFloat:RbxBrowser"
+	if not (args.title == "Select destination directory") then
+		vim.wo[win].cursorline = true
+		vim.wo[win].cursorlineopt = "line"
+		vim.wo[win].winhighlight = vim.wo[win].winhighlight .. ",CursorLine:RbxSelected"
+	end
 
 	args.buf = buf
 	args.win = win

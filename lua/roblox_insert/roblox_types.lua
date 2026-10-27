@@ -84,12 +84,12 @@ for alias, filename in pairs(font_aliases) do
 end
 
 ---@param name string
----@return boolean, string?
+---@return boolean, string?, string?
 local function verify_font(name)
 	local filename = font_lookup[name]
 
 	if not filename then
-		return false, nil
+		return false, nil, "Font not Found"
 	end
 
 	return true, filename
@@ -116,13 +116,14 @@ end
 
 ---@param enum string
 ---@param field string
----@return boolean, number?
+---@return boolean, number?, string?
 local function verify_enum(enum, field)
-	return enums[enum][field] ~= nil, enums[enum][field]
+	local value = enums[enum][field]
+	return value ~= nil, value, value == nil and (enum .. " does not have a field named " .. tostring(field)) or nil
 end
 
 ---@param t {Hex: string?, R: string?, G: string?, B: string?}
----@return boolean, number[]?, {R: string, G: string, B: string}?
+---@return boolean, number[]?, {R: string, G: string, B: string}?, string?
 local function verify_color_3(t)
 	local return_val = {}
 	if t.Hex then
@@ -148,7 +149,7 @@ local function verify_color_3(t)
 	for k, i in pairs(t) do
 		indexes = indexes + 1
 		if tonumber(i) == nil and k ~= "Hex" then
-			return false, nil, nil
+			return false, nil, nil, "Color Not Specified or is Invalid"
 		end
 		return_val[k] = tonumber(i)
 	end
@@ -167,18 +168,18 @@ local function verify_color_3(t)
 				B = tostring(return_val[3] * 255.0),
 			}
 	end
-	return false
+	return false, nil, nil, "Color Not Specified or is Invalid"
 end
 
 ---@param t { X: string?, Y: string?, Z: string? }
----@return boolean, number[]?, {X: string?, Y: string?, Z: string?}
+---@return boolean, number[]?, {X: string?, Y: string?, Z: string?}, string?
 local function verify_vector_3(t)
 	local return_val = {}
 	local indexes = 0
 	for k, i in pairs(t) do
 		indexes = indexes + 1
 		if tonumber(i) == nil then
-			return false, nil, t
+			return false, nil, t, "All fields must contain a number"
 		end
 		return_val[k] = tonumber(i)
 	end
@@ -190,18 +191,18 @@ local function verify_vector_3(t)
 		}
 		return true, return_val, t
 	end
-	return false, nil, t
+	return false, nil, t, "All fields must contain a number"
 end
 
 ---@param t { X: string?, Y: string?}
----@return boolean, number[]?, {X: string?, Y: string?}
+---@return boolean, number[]?, {X: string?, Y: string?}, string?
 local function verify_vector_2(t)
 	local return_val = {}
 	local indexes = 0
 	for k, i in pairs(t) do
 		indexes = indexes + 1
 		if tonumber(i) == nil then
-			return false, nil, t
+			return false, nil, t, "All fields must contain a number"
 		end
 		return_val[k] = tonumber(i)
 	end
@@ -212,7 +213,7 @@ local function verify_vector_2(t)
 		}
 		return true, return_val, t
 	end
-	return false, nil, t
+	return false, nil, t, "All fields must contain a number"
 end
 
 roblox_types.Axes = {
@@ -360,14 +361,14 @@ roblox_types.CFrame = {
 		"R22",
 	},
 	---@param t {X: string?, Y: string?, Z: string?, R00: string?, R01: string?, R02: string?, R10: string?, R11: string?, R12: string?, R20: string?, R21: string?, R22: string?}
-	---@return boolean, {position: number[], orientation: number[][]}?, {X: string, Y: string, Z: string, R00: string, R01: string, R02: string, R10: string, R11: string, R12: string, R20: string, R21: string, R22: string}?
+	---@return boolean, {position: number[], orientation: number[][]}?, {X: string, Y: string, Z: string, R00: string, R01: string, R02: string, R10: string, R11: string, R12: string, R20: string, R21: string, R22: string}?, string?
 	verification = function(t)
 		local return_val = {}
 		local indexes = 0
 		for k, i in pairs(t) do
 			indexes = indexes + 1
 			if tonumber(i) == nil then
-				return false, nil
+				return false, nil, nil, "'" .. i .. "' is not a valid number"
 			end
 			return_val[k] = tonumber(i)
 		end
@@ -399,9 +400,9 @@ roblox_types.CFrame = {
 						R22 = tostring(copy.R22 or "1.0"),
 					}
 			end
-			return false, nil
+			return false, nil, nil, "X, Y, and Z must contain a number"
 		end
-		return false, nil
+		return false, nil, nil, "X, Y, and Z must contain a number"
 	end,
 	---@param t any?
 	---@return boolean, boolean, {X: string, Y: string, Z: string, R00: string, R01: string, R02: string, R10: string, R11: string, R12: string, R20: string, R21: string, R22: string}?
@@ -464,7 +465,7 @@ roblox_types.Color3 = {
 		"B",
 	},
 	---@param t {Hex: string?, R: string?, G: string?, B: string?}
-	---@return boolean, number[]?, {R: string, G: string, B: string}?
+	---@return boolean, number[]?, {R: string, G: string, B: string}?, string?
 	verification = function(t)
 		return verify_color_3(t)
 	end,
@@ -485,25 +486,28 @@ roblox_types.ColorSequence = {
 		"B",
 	},
 	---@param t {time: string?, Hex: string?, R: string?, G: string?, B: string? }[]
-	---@return boolean, {keypoints: {time: number, color: number[]}}?, {time: string, R: string, G: string, B: string }[]?
+	---@return boolean, {keypoints: {time: number, color: number[]}}?, {time: string, R: string, G: string, B: string }[]?, string?
 	verification = function(t)
 		local return_val = {}
 		local correct = {}
-		for _, keypoint in ipairs(t) do
-			local valid, k, corrected =
+		for i, keypoint in ipairs(t) do
+			local valid, k, corrected, msg =
 				verify_color_3({ R = keypoint.R, G = keypoint.G, B = keypoint.B, Hex = keypoint.Hex })
 			if valid then
 				if not corrected then
 					error("unreachable state reached")
 				end
-				local time = clamp(keypoint.time, 0.0, 1.0)
-				table.insert(correct, { time = tostring(time), R = corrected.R, G = corrected.G, B = corrected.B })
+				local time = tonumber(keypoint.time)
+				if (not time) or time > 1 or time < 0 then
+					return false, nil, nil, "Invalid at keypoint " .. i .. ", time must be a number in range [0, 1]"
+				end
+				table.insert(correct, { time = time, R = corrected.R, G = corrected.G, B = corrected.B })
 				table.insert(return_val, {
 					time = time,
 					color = k,
 				})
 			else
-				return false, nil, nil
+				return false, nil, nil, "Invalid at keypoint " .. i .. ", " .. msg
 			end
 		end
 		table.sort(return_val, function(a, b)
@@ -512,12 +516,23 @@ roblox_types.ColorSequence = {
 		table.sort(correct, function(a, b)
 			return tonumber(a.time) < tonumber(b.time)
 		end)
+		local msg
+		if #return_val < 2 then
+			msg = "Must have minimum of 2 keypoints"
+		elseif #return_val > 20 then
+			msg = "Cannot have more than 20 keypoints"
+		elseif return_val[1].time ~= 0.0 then
+			msg = "At least one keypoint must have a time value of 0"
+		elseif return_val[#return_val].time ~= 1.0 then
+			msg = "At least one keypoint must have a time value of 1.0"
+		end
 		return #return_val >= 2
 			and #return_val <= 20
 			and return_val[1].time == 0.0
 			and return_val[#return_val].time == 1.0,
 			{ keypoints = return_val },
-			correct
+			correct,
+			msg
 	end,
 
 	---@param t any?
@@ -610,7 +625,7 @@ roblox_types.Enum = {
 	},
 	---@param enum string
 	---@param field string
-	---@return boolean, number?
+	---@return boolean, number?, string?
 	verification = function(enum, field)
 		if handle_nil(field) then
 			return true, nil
@@ -734,7 +749,7 @@ roblox_types.Font = {
 		"style",
 	},
 	---@param t {family: string?, weight: string?, style: string?}
-	---@return boolean, {family: string, weight: string, style: string}?, {family: string, weight: string, style: string}?
+	---@return boolean, {family: string, weight: string, style: string}?, {family: string, weight: string, style: string}?, string?
 	verification = function(t)
 		local tmp = vim.deepcopy(t)
 		local family = t.family
@@ -742,13 +757,13 @@ roblox_types.Font = {
 			local non_null_family = family
 			local return_val = {}
 
-			local valid
-			valid, family = verify_font(non_null_family)
+			local valid, msg
+			valid, family, msg = verify_font(non_null_family)
 			tmp.family = t.family
 			if valid then
 				return_val.family = "rbxasset://fonts/families/" .. non_null_family .. ".json"
 			else
-				return false, nil
+				return false, nil, nil, msg
 			end
 
 			local weight = t.weight or "Regular"
@@ -772,7 +787,7 @@ roblox_types.Font = {
 			end
 			return true, return_val, tmp
 		end
-		return false, nil
+		return false, nil, nil, "Font not Found"
 	end,
 	---@param t any?
 	---@return boolean, boolean, {family: string, weight: string, style: string}?
@@ -856,12 +871,12 @@ roblox_types.NumberRange = {
 		"Max",
 	},
 	---@param t {Min: string?, Max: string?}
-	---@return boolean, number[]?, {Min: string, Max: string}?
+	---@return boolean, number[]?, {Min: string, Max: string}?, string?
 	verification = function(t)
 		local min = tonumber(t.Min)
 		local max = tonumber(t.Max)
 		if min == nil or max == nil then
-			return false, nil
+			return false, nil, nil, "Both Fields must contain a number"
 		end
 		if min > max then
 			min, max = max, min
@@ -888,14 +903,17 @@ roblox_types.NumberSequence = {
 		"envelope",
 	},
 	---@param t {time: string?, value: string?, envelope: string?}[]
-	---@return boolean, {keypoints: {time: number, value: number, envelope: number}[]}?, {time: string, value: string, envelope: string}[]?
+	---@return boolean, {keypoints: {time: number, value: number, envelope: number}[]}?, {time: string, value: string, envelope: string}[]?, string?
 	verification = function(t)
 		local tmp = vim.deepcopy(t)
 		local return_val = {}
-		for _, keypoint in ipairs(tmp) do
+		for i, keypoint in ipairs(tmp) do
 			local value = tonumber(keypoint.value)
 			if value ~= nil then
-				local time = clamp(keypoint.time, 0.0, 1.0)
+				local time = tonumber(keypoint.time)
+				if (not time) or time > 1 or time < 0 then
+					return false, nil, nil, "Invalid at keypoint " .. i .. ", time must be a number in range [0, 1]"
+				end
 				local envelope = tonumber(keypoint.envelope) or 0.0
 				table.insert(return_val, {
 					time = time,
@@ -905,7 +923,7 @@ roblox_types.NumberSequence = {
 				keypoint.envelope = tostring(envelope)
 				keypoint.time = tostring(time)
 			else
-				return false, nil
+				return false, nil, nil, "Invalid at keypoint " .. i .. ", value field must contain a number"
 			end
 		end
 		table.sort(return_val, function(a, b)
@@ -914,12 +932,23 @@ roblox_types.NumberSequence = {
 		table.sort(tmp, function(a, b)
 			return tonumber(a.time) < tonumber(b.time)
 		end)
+		local msg
+		if not #return_val >= 2 then
+			msg = "Must have minimum of 2 keypoints"
+		elseif not #return_val <= 20 then
+			msg = "Cannot have more than 20 keypoints"
+		elseif not return_val[1].time == 0.0 then
+			msg = "At least one keypoint must have a time value of 0"
+		elseif not return_val[#return_val].time == 1.0 then
+			msg = "At least one keypoint must have a time value of 1.0"
+		end
 		return #return_val >= 2
 			and #return_val <= 20
 			and return_val[1].time == 0.0
 			and return_val[#return_val].time == 1.0,
 			{ keypoints = return_val },
-			tmp
+			tmp,
+			msg
 	end,
 	---@param t any?
 	---@return boolean, boolean, {time: string, value: string, envelope: string}[]?
@@ -967,7 +996,7 @@ roblox_types.PhysicalProperties = {
 		"acousticAbsorption",
 	},
 	---@param t {density: string?, friction: string?, elasticity: string?, frictionWeight: string?, elasticityWeight: string?, acousticAbsorption: string?}
-	---@return boolean, table|string?, {density: string, friction: string, elasticity: string, frictionWeight: string, elasticityWeight: string, acousticAbsorption: string}?
+	---@return boolean, table|string?, {density: string, friction: string, elasticity: string, frictionWeight: string, elasticityWeight: string, acousticAbsorption: string}?, string?
 	verification = function(t)
 		local tmp = vim.deepcopy(t)
 
@@ -975,10 +1004,16 @@ roblox_types.PhysicalProperties = {
 			return true, "Default", default_table
 		end
 		local return_val = {}
+		local all_numbers = true
 		for _, v in pairs(t) do
 			if v == "Default" then
 				return true, "Default", default_table
+			elseif not tonumber(v) then
+				all_numbers = false
 			end
+		end
+		if not all_numbers then
+			return false, nil, nil, "A field does not contain Default or a number"
 		end
 		return_val.density = clamp(t.density, 0.0001, 100.0, 0.5)
 		tmp.density = tostring(return_val.density)
@@ -1050,17 +1085,17 @@ roblox_types.Ray = {
 		"directionZ",
 	},
 	---@param t {originX: string?, originY: string?, originZ: string?, directionX: string?, directionY: string?, directionZ: string?}
-	---@return boolean, {origin: number[], direction: number[]}?, {originX: string?, originY: string?, originZ: string?, directionX: string?, directionY: string?, directionZ: string?}?
+	---@return boolean, {origin: number[], direction: number[]}?, {originX: string?, originY: string?, originZ: string?, directionX: string?, directionY: string?, directionZ: string?}?, string?
 	verification = function(t)
 		local return_val = {}
 		local verify
 		verify, return_val.origin = verify_vector_3({ X = t.originX, Y = t.originY, Z = t.originZ })
 		if not verify then
-			return false, nil
+			return false, nil, nil, "All fields must contain a number"
 		end
 		verify, return_val.direction = verify_vector_3({ X = t.directionX, Y = t.directionY, Z = t.directionZ })
 		if not verify then
-			return false, nil
+			return false, nil, nil, "All fields must contain a number"
 		end
 		return true, return_val, t
 	end,
@@ -1094,18 +1129,18 @@ roblox_types.Rect = {
 		"Y1",
 	},
 	---@param t {X0: string?, Y0: string?, X1: string?, Y1: string?}
-	---@return boolean, number[][]?, {X0: string?, Y0: string?, X1: string?, Y1: string?}?
+	---@return boolean, number[][]?, {X0: string?, Y0: string?, X1: string?, Y1: string?}?, string?
 	verification = function(t)
 		local verify
 		local corner0
 		verify, corner0 = verify_vector_2({ X = t.X0, Y = t.Y0 })
 		if not verify then
-			return false, nil
+			return false, nil, nil, "All fields must contain a number"
 		end
 		local corner1
 		verify, corner1 = verify_vector_2({ X = t.X1, Y = t.Y1 })
 		if not verify then
-			return false, nil
+			return false, nil, nil, "All fields must contain a number"
 		end
 		return true, { corner0, corner1 }, t
 	end,
@@ -1161,14 +1196,14 @@ roblox_types.UDim = {
 		"Offset",
 	},
 	---@param t {Scale: string?, Offset: string?}
-	---@return boolean, number[]?, {Scale: string, Offset: string}?
+	---@return boolean, number[]?, {Scale: string, Offset: string}?, string?
 	verification = function(t)
 		local return_val = {}
 		local indexes = 0
 		for k, i in pairs(t) do
 			indexes = indexes + 1
 			if tonumber(i) == nil then
-				return false, nil, nil
+				return false, nil, nil, "All fields must contain a number"
 			end
 			return_val[k] = tonumber(i)
 		end
@@ -1176,7 +1211,7 @@ roblox_types.UDim = {
 			return_val = { return_val.Scale, return_val.Offset }
 			return true, return_val, { Scale = tostring(return_val[1]), Offset = tostring(return_val[2]) }
 		end
-		return false
+		return false, nil, nil, "All fields must contain a number"
 	end,
 	---@param t any?
 	reverse = function(t)
@@ -1200,14 +1235,14 @@ roblox_types.UDim2 = {
 		"yOffset",
 	},
 	---@param t {xScale: string?, xOffset: string?, yScale: string?, yOffset: string?}
-	---@return boolean, number[][]?, {xScale: string?, xOffset: string?, yScale: string?, yOffset: string?}?
+	---@return boolean, number[][]?, {xScale: string?, xOffset: string?, yScale: string?, yOffset: string?}?, string?
 	verification = function(t)
 		local return_val = {}
 		local indexes = 0
 		for k, i in pairs(t) do
 			indexes = indexes + 1
 			if tonumber(i) == nil then
-				return false, nil
+				return false, nil, nil, "All fields must contain a number"
 			end
 			return_val[k] = tonumber(i)
 		end
@@ -1215,7 +1250,7 @@ roblox_types.UDim2 = {
 			return_val = { { return_val.xScale, return_val.xOffset }, { return_val.yScale, return_val.yOffset } }
 			return true, return_val, t
 		end
-		return false
+		return false, nil, nil, "All fields must contain a number"
 	end,
 	---@param t any?
 	---@return boolean, boolean, {xScale: string, xOffset: string, yScale: string, yOffset: string}?
@@ -1242,7 +1277,7 @@ roblox_types.Vector2 = {
 		"Y",
 	},
 	---@param t { X: string?, Y: string?}
-	---@return boolean, number[]?, {X: string?, Y: string?}
+	---@return boolean, number[]?, {X: string?, Y: string?}, string?
 	verification = function(t)
 		return verify_vector_2(t)
 	end,
@@ -1267,7 +1302,7 @@ roblox_types.Vector3 = {
 		"Z",
 	},
 	---@param t { X: string?, Y: string?, Z: string? }
-	---@return boolean, number[]?, {X: string?, Y: string?, Z: string?}
+	---@return boolean, number[]?, {X: string?, Y: string?, Z: string?}, string?
 	verification = function(t)
 		return verify_vector_3(t)
 	end,
