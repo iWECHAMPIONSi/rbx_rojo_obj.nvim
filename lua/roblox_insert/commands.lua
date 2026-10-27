@@ -29,6 +29,7 @@ local function open_browser(cwd)
 	if not args then
 		return
 	end
+
 	local function foo(name, path, visual_path)
 		local ui_args = browser.generate_dimensions(name, path, visual_path)
 		if not ui_args then
@@ -53,7 +54,8 @@ local function open_browser(cwd)
 			ui_args.class_display.win,
 			ui_args.path_bar.buf,
 			ui_args.path_bar.win,
-			ui_args.search_bar.win
+			ui_args.search_bar.win,
+			ui_args.class_edit_box
 		)
 		ui_args.class_display.keybinds(
 			ui_args.class_display.buf,
