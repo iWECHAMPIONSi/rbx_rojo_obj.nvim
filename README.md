@@ -21,7 +21,7 @@ To edit an existing supported Rojo object instead, enable file visibility if nec
 
 You can also create an object directly with `:RbxCreate <name> <class> [directory]`.
 
-https://github.com/user-attachments/assets/0bf07c23-7b26-44ba-bb66-f2c47d87ae84
+https://github.com/user-attachments/assets/9e2afc6a-93b8-4f41-904f-a5a127185277
 
 ## Configuration
 
