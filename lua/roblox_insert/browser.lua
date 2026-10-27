@@ -1425,12 +1425,21 @@ local function generate_dimensions(name, path, visual_path)
 					saved_object_properties.property_tables[index] = properties
 					local json_table = {}
 					for property, i in pairs(properties.properties) do
-						json_table[property] = i.json
+						if property ~= "EXTERNAL" then
+							json_table[property] = i.json
+						end
 					end
 					if edit_class then
 						if current_class then
 							local meta_json = (string.find(current_class, "Script", 1, true) ~= nil)
-							writer.edit_file(current_class, edit_path, json_table, properties.init_meta, meta_json)
+							writer.edit_file(
+								current_class,
+								edit_path,
+								json_table,
+								properties.init_meta,
+								meta_json,
+								properties.properties.EXTERNAL
+							)
 						end
 						close_browser()
 					else

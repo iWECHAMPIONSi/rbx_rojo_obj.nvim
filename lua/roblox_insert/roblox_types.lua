@@ -1369,6 +1369,13 @@ local function revert(class, json_data)
 			end
 		end
 	end
+	return_val.EXTERNAL = {}
+	for key, value in pairs(json_data) do
+		if not (key == "className" or key == "ClassName" or key == "properties" or key == "Properties") then
+			return_val.EXTERNAL[key] = value
+		end
+	end
+
 	return return_val
 end
 
