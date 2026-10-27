@@ -110,7 +110,7 @@ end
 ---@param default number?
 ---@return number
 local function clamp(v, min, max, default)
-	v = tonumber(v) or 0
+	v = tonumber(v) or default or min
 	return math.max(min, math.min(max, tonumber(v) or default or min))
 end
 
