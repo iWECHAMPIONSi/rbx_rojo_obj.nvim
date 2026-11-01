@@ -567,7 +567,12 @@ local function generate_dimensions()
 							true,
 							win,
 							selection.class,
-							file_path
+							file_path,
+							render_new_dir,
+							buf,
+							nil,
+							path,
+							display_all
 						)
 						disp_class(ui_args.class_display.buf, selection.class, true, true)
 					end

@@ -1197,7 +1197,12 @@ local function generate_dimensions(name, path, visual_path)
 				edit_mode,
 				focus_win,
 				edit_class,
-				edit_path
+				edit_path,
+				render_func,
+				dir_buf,
+				_,
+				p,
+				disp_all
 			)
 				local prev_index
 				if not edit_mode then
@@ -1265,6 +1270,9 @@ local function generate_dimensions(name, path, visual_path)
 					vim.api.nvim_win_close(class_edit_box.win, true)
 					vim.api.nvim_win_close(s_win, true)
 					vim.api.nvim_win_close(p_win, true)
+					if render_func then
+						render_func(dir_buf, nil, p, disp_all)
+					end
 					if focus_win then
 						vim.api.nvim_set_current_win(focus_win)
 					end
