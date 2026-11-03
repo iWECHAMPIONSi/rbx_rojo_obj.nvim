@@ -447,7 +447,7 @@ local function disp_property(t, properties_table, name, dimensions, when_done, e
 				end
 				field_ref = { function() end }
 			else
-				vim.cmd.CloseProperty()
+				vim.cmd("CloseProperty")
 			end
 			disp_table(props, value_ref, field_ref, buf, win)
 		end
@@ -554,7 +554,7 @@ local function disp_property(t, properties_table, name, dimensions, when_done, e
 					{ index .. "/" .. #value_ref }
 				)
 			else
-				vim.cmd.CloseProperty()
+				vim.cmd("CloseProperty")
 			end
 		end
 
