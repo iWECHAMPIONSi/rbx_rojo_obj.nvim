@@ -447,7 +447,10 @@ local function disp_property(t, properties_table, name, dimensions, when_done, e
 				end
 				field_ref = { function() end }
 			else
-				vim.cmd("CloseProperty")
+				vim.api.nvim_set_current_win(focus_win)
+				if when_done then
+					when_done()
+				end
 			end
 			disp_table(props, value_ref, field_ref, buf, win)
 		end
@@ -554,7 +557,10 @@ local function disp_property(t, properties_table, name, dimensions, when_done, e
 					{ index .. "/" .. #value_ref }
 				)
 			else
-				vim.cmd("CloseProperty")
+				vim.api.nvim_set_current_win(focus_win)
+				if when_done then
+					when_done()
+				end
 			end
 		end
 
@@ -1559,8 +1565,8 @@ local function generate_dimensions(name, path, visual_path)
 
 						local copied = false
 
-						for i, p in ipairs(saved_object_properties.property_tables) do
-							if not p.name then
+						for i, t in ipairs(saved_object_properties.property_tables) do
+							if not t.name then
 								copied = true
 								create_input(
 									"Confirm",
