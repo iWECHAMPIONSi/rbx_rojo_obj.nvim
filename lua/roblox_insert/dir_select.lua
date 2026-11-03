@@ -504,7 +504,7 @@ local function generate_dimensions()
 							if selection.name == "init.meta.json" then
 								edit_class({
 									t = "dir",
-									name = vim.fn.namemodify(path, ":t"),
+									name = vim.fs.namemodify(path, ":t"),
 									contents = selection.contents,
 									class = selection.class,
 									file_path = vim.fs.joinpath(path, selection.name),
