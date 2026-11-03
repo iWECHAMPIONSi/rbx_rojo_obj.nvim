@@ -833,7 +833,7 @@ local function modify_class_list(buf, category, line, favorite, added_class)
 		end
 		vim.api.nvim_set_option_value("modifiable", true, { buf = buf })
 		vim.api.nvim_buf_set_lines(buf, line - 1, line + len, false, { "> " .. category .. "/" })
-		vim.api.nvim_buf_clear_namespace(buf, config.ns, line - 1, line + len)
+		-- vim.api.nvim_bufclear_namespace(buf, config.ns, line - 1, line + len)
 		vim.api.nvim_set_option_value("modifiable", false, { buf = buf })
 	end
 end
