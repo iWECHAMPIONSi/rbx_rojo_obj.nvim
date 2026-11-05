@@ -652,6 +652,18 @@
                         "Name": "Bool"
                     }
                 },
+                "Parameters": {
+                    "Category": "Playback",
+                    "MemberType": "Property",
+                    "Tags": [
+                        "NotReplicated",
+                        "NotScriptable"
+                    ],
+                    "ValueType": {
+                        "Category": "Primitive",
+                        "Name": "Bool"
+                    }
+                },
                 "Speed": {
                     "Category": "Playback",
                     "MemberType": "Property",
@@ -13946,6 +13958,301 @@
                 "Instance"
             ]
         },
+        "TextChannelWindow": {
+            "Properties": {
+                "FontFace": {
+                    "Category": "Appearance",
+                    "MemberType": "Property",
+                    "Tags": [],
+                    "ValueType": {
+                        "Category": "DataType",
+                        "Name": "Font"
+                    }
+                },
+                "UseDefaultFont": {
+                    "Category": "Appearance",
+                    "MemberType": "Property",
+                    "Tags": [],
+                    "ValueType": {
+                        "Category": "Primitive",
+                        "Name": "Bool"
+                    }
+                },
+                "Active": {
+                    "Category": "Data",
+                    "MemberType": "Property",
+                    "Tags": [],
+                    "ValueType": {
+                        "Category": "Primitive",
+                        "Name": "Bool"
+                    }
+                },
+                "AnchorPoint": {
+                    "Category": "Data",
+                    "MemberType": "Property",
+                    "Tags": [],
+                    "ValueType": {
+                        "Category": "DataType",
+                        "Name": "Vector2"
+                    }
+                },
+                "AutomaticSize": {
+                    "Category": "Data",
+                    "MemberType": "Property",
+                    "Tags": [],
+                    "ValueType": {
+                        "Category": "Enum",
+                        "Name": "AutomaticSize"
+                    }
+                },
+                "BackgroundColor3": {
+                    "Category": "Data",
+                    "MemberType": "Property",
+                    "Tags": [],
+                    "ValueType": {
+                        "Category": "DataType",
+                        "Name": "Color3"
+                    }
+                },
+                "BackgroundTransparency": {
+                    "Category": "Data",
+                    "MemberType": "Property",
+                    "Tags": [],
+                    "ValueType": {
+                        "Category": "Primitive",
+                        "Name": "Float32"
+                    }
+                },
+                "BorderColor3": {
+                    "Category": "Data",
+                    "MemberType": "Property",
+                    "Tags": [],
+                    "ValueType": {
+                        "Category": "DataType",
+                        "Name": "Color3"
+                    }
+                },
+                "BorderMode": {
+                    "Category": "Data",
+                    "MemberType": "Property",
+                    "Tags": [],
+                    "ValueType": {
+                        "Category": "Enum",
+                        "Name": "BorderMode"
+                    }
+                },
+                "BorderSizePixel": {
+                    "Category": "Data",
+                    "MemberType": "Property",
+                    "Tags": [],
+                    "ValueType": {
+                        "Category": "Primitive",
+                        "Name": "Int32"
+                    }
+                },
+                "ClipsDescendants": {
+                    "Category": "Behavior",
+                    "MemberType": "Property",
+                    "Tags": [],
+                    "ValueType": {
+                        "Category": "Primitive",
+                        "Name": "Bool"
+                    }
+                },
+                "InputSink": {
+                    "Category": "Data",
+                    "MemberType": "Property",
+                    "Tags": [
+                        "NotReplicated"
+                    ],
+                    "ValueType": {
+                        "Category": "Enum",
+                        "Name": "InputSink"
+                    }
+                },
+                "Interactable": {
+                    "Category": "Data",
+                    "MemberType": "Property",
+                    "Tags": [],
+                    "ValueType": {
+                        "Category": "Primitive",
+                        "Name": "Bool"
+                    }
+                },
+                "LayoutOrder": {
+                    "Category": "Data",
+                    "MemberType": "Property",
+                    "Tags": [],
+                    "ValueType": {
+                        "Category": "Primitive",
+                        "Name": "Int32"
+                    }
+                },
+                "Position": {
+                    "Category": "Data",
+                    "MemberType": "Property",
+                    "Tags": [],
+                    "ValueType": {
+                        "Category": "DataType",
+                        "Name": "UDim2"
+                    }
+                },
+                "Rotation": {
+                    "Category": "Data",
+                    "MemberType": "Property",
+                    "Tags": [],
+                    "ValueType": {
+                        "Category": "Primitive",
+                        "Name": "Float32"
+                    }
+                },
+                "Selectable": {
+                    "Category": "Selection",
+                    "MemberType": "Property",
+                    "Tags": [],
+                    "ValueType": {
+                        "Category": "Primitive",
+                        "Name": "Bool"
+                    }
+                },
+                "SelectionOrder": {
+                    "Category": "Selection",
+                    "MemberType": "Property",
+                    "Tags": [],
+                    "ValueType": {
+                        "Category": "Primitive",
+                        "Name": "Int32"
+                    }
+                },
+                "Size": {
+                    "Category": "Data",
+                    "MemberType": "Property",
+                    "Tags": [],
+                    "ValueType": {
+                        "Category": "DataType",
+                        "Name": "UDim2"
+                    }
+                },
+                "SizeConstraint": {
+                    "Category": "Data",
+                    "MemberType": "Property",
+                    "Tags": [],
+                    "ValueType": {
+                        "Category": "Enum",
+                        "Name": "SizeConstraint"
+                    }
+                },
+                "Visible": {
+                    "Category": "Data",
+                    "MemberType": "Property",
+                    "Tags": [],
+                    "ValueType": {
+                        "Category": "Primitive",
+                        "Name": "Bool"
+                    }
+                },
+                "ZIndex": {
+                    "Category": "Data",
+                    "MemberType": "Property",
+                    "Tags": [],
+                    "ValueType": {
+                        "Category": "Primitive",
+                        "Name": "Int32"
+                    }
+                },
+                "AutoLocalize": {
+                    "Category": "Localization",
+                    "MemberType": "Property",
+                    "Tags": [],
+                    "ValueType": {
+                        "Category": "Primitive",
+                        "Name": "Bool"
+                    }
+                },
+                "SelectionBehaviorDown": {
+                    "Category": "Selection",
+                    "MemberType": "Property",
+                    "Tags": [],
+                    "ValueType": {
+                        "Category": "Enum",
+                        "Name": "SelectionBehavior"
+                    }
+                },
+                "SelectionBehaviorLeft": {
+                    "Category": "Selection",
+                    "MemberType": "Property",
+                    "Tags": [],
+                    "ValueType": {
+                        "Category": "Enum",
+                        "Name": "SelectionBehavior"
+                    }
+                },
+                "SelectionBehaviorRight": {
+                    "Category": "Selection",
+                    "MemberType": "Property",
+                    "Tags": [],
+                    "ValueType": {
+                        "Category": "Enum",
+                        "Name": "SelectionBehavior"
+                    }
+                },
+                "SelectionBehaviorUp": {
+                    "Category": "Selection",
+                    "MemberType": "Property",
+                    "Tags": [],
+                    "ValueType": {
+                        "Category": "Enum",
+                        "Name": "SelectionBehavior"
+                    }
+                },
+                "SelectionGroup": {
+                    "Category": "Selection",
+                    "MemberType": "Property",
+                    "Tags": [],
+                    "ValueType": {
+                        "Category": "Primitive",
+                        "Name": "Bool"
+                    }
+                },
+                "Archivable": {
+                    "Category": "Behavior",
+                    "MemberType": "Property",
+                    "Tags": [],
+                    "ValueType": {
+                        "Category": "Primitive",
+                        "Name": "Bool"
+                    }
+                },
+                "Name": {
+                    "Category": "Data",
+                    "MemberType": "Property",
+                    "Tags": [],
+                    "ValueType": {
+                        "Category": "Primitive",
+                        "Name": "String"
+                    }
+                },
+                "Sandboxed": {
+                    "Category": "Permissions",
+                    "MemberType": "Property",
+                    "Tags": [
+                        "NotReplicated"
+                    ],
+                    "ValueType": {
+                        "Category": "Primitive",
+                        "Name": "Bool"
+                    }
+                }
+            },
+            "Tags": [],
+            "Superclass": "GuiObject",
+            "NestedClasses": [
+                "GuiBase",
+                "GuiBase2d",
+                "GuiObject",
+                "Instance"
+            ]
+        },
         "VideoFrame": {
             "Properties": {
                 "Looped": {
@@ -14760,6 +15067,15 @@
                         "Name": "Bool"
                     }
                 },
+                "InputSinkEnabled": {
+                    "Category": "Data",
+                    "MemberType": "Property",
+                    "Tags": [],
+                    "ValueType": {
+                        "Category": "Enum",
+                        "Name": "RolloutState"
+                    }
+                },
                 "ResetOnSpawn": {
                     "Category": "Data",
                     "MemberType": "Property",
@@ -14927,6 +15243,15 @@
                     "ValueType": {
                         "Category": "Primitive",
                         "Name": "Bool"
+                    }
+                },
+                "InputSinkEnabled": {
+                    "Category": "Data",
+                    "MemberType": "Property",
+                    "Tags": [],
+                    "ValueType": {
+                        "Category": "Enum",
+                        "Name": "RolloutState"
                     }
                 },
                 "ResetOnSpawn": {
@@ -15103,6 +15428,15 @@
                     "ValueType": {
                         "Category": "Primitive",
                         "Name": "Bool"
+                    }
+                },
+                "InputSinkEnabled": {
+                    "Category": "Data",
+                    "MemberType": "Property",
+                    "Tags": [],
+                    "ValueType": {
+                        "Category": "Enum",
+                        "Name": "RolloutState"
                     }
                 },
                 "ResetOnSpawn": {
@@ -15334,6 +15668,15 @@
                     "ValueType": {
                         "Category": "Primitive",
                         "Name": "Bool"
+                    }
+                },
+                "InputSinkEnabled": {
+                    "Category": "Data",
+                    "MemberType": "Property",
+                    "Tags": [],
+                    "ValueType": {
+                        "Category": "Enum",
+                        "Name": "RolloutState"
                     }
                 },
                 "ResetOnSpawn": {
@@ -27907,15 +28250,6 @@
         },
         "TeleportOptions": {
             "Properties": {
-                "ReservedServerAccessCode": {
-                    "Category": "Data",
-                    "MemberType": "Property",
-                    "Tags": [],
-                    "ValueType": {
-                        "Category": "Primitive",
-                        "Name": "String"
-                    }
-                },
                 "ReservedServerId": {
                     "Category": "Data",
                     "MemberType": "Property",
@@ -27932,15 +28266,6 @@
                     "ValueType": {
                         "Category": "Primitive",
                         "Name": "String"
-                    }
-                },
-                "ShouldReserveServer": {
-                    "Category": "Data",
-                    "MemberType": "Property",
-                    "Tags": [],
-                    "ValueType": {
-                        "Category": "Primitive",
-                        "Name": "Bool"
                     }
                 },
                 "VipServerId": {
@@ -29161,9 +29486,7 @@
                 "Scale": {
                     "Category": "Appearance",
                     "MemberType": "Property",
-                    "Tags": [
-                        "NotBrowsable"
-                    ],
+                    "Tags": [],
                     "ValueType": {
                         "Category": "Primitive",
                         "Name": "Float32"
@@ -29172,9 +29495,7 @@
                 "TileMode": {
                     "Category": "Appearance",
                     "MemberType": "Property",
-                    "Tags": [
-                        "NotBrowsable"
-                    ],
+                    "Tags": [],
                     "ValueType": {
                         "Category": "Enum",
                         "Name": "GradientTileMode"
@@ -29192,9 +29513,7 @@
                 "Type": {
                     "Category": "Appearance",
                     "MemberType": "Property",
-                    "Tags": [
-                        "NotBrowsable"
-                    ],
+                    "Tags": [],
                     "ValueType": {
                         "Category": "Enum",
                         "Name": "GradientType"
@@ -31046,7 +31365,8 @@
         },
         "AnimationValueNodeType": {
             "Invalid": 0,
-            "Expression": 1
+            "Expression": 1,
+            "FeatureMatching": 2
         },
         "AnimatorRetargetingMode": {
             "Default": 0,
@@ -31435,11 +31755,7 @@
             "Closeup": 1,
             "FullBody": 2
         },
-        "AvatarUnificationMode": {
-            "Default": 0,
-            "Disabled": 1,
-            "Enabled": 2
-        },
+        "AvatarUnificationMode": {},
         "Axis": {
             "X": 0,
             "Y": 1,
@@ -32428,6 +32744,11 @@
             "Float32": 0,
             "Float16": 1
         },
+        "FeatureMatchingSource": {
+            "Input": 0,
+            "Continuity": 1,
+            "Ignore": 2
+        },
         "FeatureNormalization": {
             "None": 0,
             "StandardScore": 1,
@@ -32436,6 +32757,10 @@
         "FeatureRestrictionAbuseVector": {
             "ExperienceChat": 0,
             "Communication": 1
+        },
+        "FeatureSelectionMode": {
+            "Nearest": 0,
+            "WeightedRandom": 1
         },
         "FeedbackType": {
             "Feedback": 0,
@@ -33604,7 +33929,8 @@
             "Block": 1,
             "Cylinder": 2,
             "Wedge": 3,
-            "CornerWedge": 4
+            "CornerWedge": 4,
+            "Capsule": 5
         },
         "ParticleEmitter2DEmissionMode": {
             "Point": 0,
@@ -33777,6 +34103,17 @@
             "FallbackToDefault": 1,
             "Kick": 2
         },
+        "PlayerDeviceTrustDecision": {
+            "Accept": 0,
+            "Reject": 1
+        },
+        "PlayerDeviceTrustLevel": {
+            "Pending": 0,
+            "Unknown": 1,
+            "None": 2,
+            "Standard": 3,
+            "Full": 4
+        },
         "PlayerExitReason": {
             "Unknown": 0,
             "PlatformKick": 1,
@@ -33847,11 +34184,6 @@
             "InProgress": 1,
             "Completed": 2,
             "Failed": 3
-        },
-        "PrimalPhysicsSolver": {
-            "Default": 0,
-            "Experimental": 1,
-            "Disabled": 2
         },
         "PrimitiveType": {
             "Null": 0,
@@ -34452,6 +34784,11 @@
         "SensorUpdateType": {
             "OnRead": 0,
             "Manual": 1
+        },
+        "SerializationFormat": {
+            "Binary": 0,
+            "Json": 1,
+            "Luau": 2
         },
         "ServerLiveEditingMode": {
             "Uninitialized": 0,

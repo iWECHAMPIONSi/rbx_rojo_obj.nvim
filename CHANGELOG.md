@@ -1,19 +1,42 @@
 ## ChangeLog
 
-### Added
-- Added configurable `Rbx*` highlight groups for the Class Browser, Directory Browser, and Property Editor, including links to colorscheme and Netrw highlight groups.
-- Added automatic reapplication of configured highlights when the Neovim colorscheme changes.
-- Added more informative live property-validation messages, including offending keypoint indices and sequence-wide constraints for `ColorSequence` and `NumberSequence`.
+## Changes:
+* Clarified that the Property is unable to export, not the entire Class
+* Fixed diff.py because I acutally had to use it this time
 
-### Changed
-- Applied colorscheme-aware highlighting to class names, property names, data types, values, numbers, booleans, directories, file classification suffixes, selections, and validation errors.
-- Updated the Property Editor to preserve its displayed contents when focus moves to another window.
-- Updated sequence validation to reject keypoint times outside the range `[0, 1]` rather than silently clamping them.
-
-### Fixed
-- Fixed default keybinding initialization when `setup()` is called.
-- Fixed missing, stale, or misplaced highlights after buffer redraws, property edits, search-mode favorite changes, and keypoint navigation.
-- Fixed the `NumberSequence` keypoint-count and endpoint comparisons.
-- Fixed font-family alias normalization when generating font asset paths.
-- Fixed `.meta.json` destination paths when editing metadata associated with Luau scripts, preventing metadata output from being directed to the script source file.
-- Added explicit rejection of unsupported implicit property values during import instead of failing while processing them.
+## Roblox API Changes Effective to Plugin
+CHANGED CLASS: AnimationPlayer
+    NEW PROPERTY: Parameters
+NEW CLASS: TextChannelWindow
+CHANGED CLASS: BillboardGui
+    NEW PROPERTY: InputSinkEnabled
+CHANGED CLASS: ScreenGui
+    NEW PROPERTY: InputSinkEnabled
+CHANGED CLASS: AdGui
+    NEW PROPERTY: InputSinkEnabled
+CHANGED CLASS: SurfaceGui
+    NEW PROPERTY: InputSinkEnabled
+CHANGED CLASS: TeleportOptions
+    REMOVED PROPERTY: ReservedServerAccessCode -> \['Deprecated', 'Readonly']
+    REMOVED PROPERTY: ShouldReserveServer -> \['Deprecated']
+CHANGED CLASS: UIGradient
+    CHANGED PROPERTY: Scale
+        Tags: \['NotBrowsable'] -> []
+    CHANGED PROPERTY: TileMode
+        Tags: \['NotBrowsable'] -> []
+    CHANGED PROPERTY: Type
+        Tags: \['NotBrowsable'] -> []
+CHANGED ENUM: AnimationValueNodeType
+    NEW ENUM FIELD: FeatureMatching
+CHANGED ENUM: AvatarUnificationMode
+    REMOVED ENUM FIELD: AvatarUnificationMode.Default -> \['Deprecated']
+    REMOVED ENUM FIELD: AvatarUnificationMode.Disabled -> \['Deprecated']
+    REMOVED ENUM FIELD: AvatarUnificationMode.Enabled -> \['Deprecated']
+NEW ENUM: FeatureMatchingSource
+NEW ENUM: FeatureSelectionMode
+CHANGED ENUM: PartType
+    NEW ENUM FIELD: Capsule
+NEW ENUM: PlayerDeviceTrustDecision
+NEW ENUM: PlayerDeviceTrustLevel
+NEW ENUM: SerializationFormat
+REMOVED ENUM: PrimalPhysicsSolver -> REMOVED

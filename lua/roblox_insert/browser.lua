@@ -139,18 +139,18 @@ local function disp_property(t, properties_table, name, dimensions, when_done, e
 	local function disp_table(props, value_ref, field_ref, buf, win, override_table, str)
 		str = str or {}
 		highlights = {}
-		table.insert(str, 1, "Can Export: " .. tostring(valid))
+		table.insert(str, 1, "Can Export Property: " .. tostring(valid))
 		table.insert(highlights, 1, {
 			row = 0,
-			start_col = #"Can Export: ",
-			end_col = #"Can Export: " + (valid and #"true" or #"false"),
+			start_col = #"Can Export Property: ",
+			end_col = #"Can Export Property: " + (valid and #"true" or #"false"),
 			hl_group = config.hl_group.RbxBoolean,
 		})
 		if not valid and err_msg then
 			str[1] = str[1] .. " (" .. err_msg .. ")"
 			table.insert(highlights, 2, {
 				row = 0,
-				start_col = #"Can Export: false (",
+				start_col = #"Can Export Property: false (",
 				end_col = #str[1] - 1,
 				hl_group = config.hl_group.RbxError,
 			})
@@ -184,22 +184,22 @@ local function disp_property(t, properties_table, name, dimensions, when_done, e
 						str[i + add_index] = field .. ": " .. (value_ref[field] or "")
 						local _
 						valid, _, _, err_msg = value_type.verification(global_ref or value_ref)
-						str[1] = "Can Export: " .. tostring(valid)
+						str[1] = "Can Export Property: " .. tostring(valid)
 						vim.api.nvim_set_option_value("modifiable", true, { buf = buf })
 						vim.api.nvim_buf_clear_namespace(buf, config.ns, 0, 1)
 						vim.api.nvim_buf_clear_namespace(buf, config.ns, i - 1 + add_index, i + add_index)
 						if not valid and err_msg then
 							str[1] = str[1] .. " (" .. err_msg .. ")"
 							vim.api.nvim_buf_set_lines(buf, 0, 1, false, { str[1] })
-							vim.api.nvim_buf_set_extmark(buf, config.ns, 0, #"Can Export: false (", {
+							vim.api.nvim_buf_set_extmark(buf, config.ns, 0, #"Can Export Property: false (", {
 								end_col = #str[1] - 1,
 								hl_group = config.hl_group.RbxError,
 							})
 						else
 							vim.api.nvim_buf_set_lines(buf, 0, 1, false, { str[1] })
 						end
-						vim.api.nvim_buf_set_extmark(buf, config.ns, 0, #"Can Export: ", {
-							end_col = #"Can Export: " + (valid and #"true" or #"false"),
+						vim.api.nvim_buf_set_extmark(buf, config.ns, 0, #"Can Export Property: ", {
+							end_col = #"Can Export Property: " + (valid and #"true" or #"false"),
 							hl_group = config.hl_group.RbxBoolean,
 						})
 						vim.api.nvim_buf_set_lines(buf, i - 1 + add_index, i + add_index, false, { str[i + add_index] })
@@ -233,22 +233,22 @@ local function disp_property(t, properties_table, name, dimensions, when_done, e
 						str[i + add_index] = field .. ": " .. (value_ref[field] or "")
 						local _
 						valid, _, _, err_msg = value_type.verification(global_ref or value_ref)
-						str[1] = "Can Export: " .. tostring(valid)
+						str[1] = "Can Export Property: " .. tostring(valid)
 						vim.api.nvim_set_option_value("modifiable", true, { buf = buf })
 						vim.api.nvim_buf_clear_namespace(buf, config.ns, 0, 1)
 						vim.api.nvim_buf_clear_namespace(buf, config.ns, i - 1 + add_index, i + add_index)
 						if not valid and err_msg then
 							str[1] = str[1] .. " (" .. err_msg .. ")"
 							vim.api.nvim_buf_set_lines(buf, 0, 1, false, { str[1] })
-							vim.api.nvim_buf_set_extmark(buf, config.ns, 0, #"Can Export: false (", {
+							vim.api.nvim_buf_set_extmark(buf, config.ns, 0, #"Can Export Property: false (", {
 								end_col = #str[1] - 1,
 								hl_group = config.hl_group.RbxError,
 							})
 						else
 							vim.api.nvim_buf_set_lines(buf, 0, 1, false, { str[1] })
 						end
-						vim.api.nvim_buf_set_extmark(buf, config.ns, 0, #"Can Export: ", {
-							end_col = #"Can Export: " + (valid and #"true" or #"false"),
+						vim.api.nvim_buf_set_extmark(buf, config.ns, 0, #"Can Export Property: ", {
+							end_col = #"Can Export Property: " + (valid and #"true" or #"false"),
 							hl_group = config.hl_group.RbxBoolean,
 						})
 						vim.api.nvim_buf_set_lines(buf, i - 1 + add_index, i + add_index, false, { str[i + add_index] })
@@ -287,21 +287,21 @@ local function disp_property(t, properties_table, name, dimensions, when_done, e
 	end
 
 	local function disp_single_field()
-		local str_valid = "Can Export: " .. tostring(valid)
+		local str_valid = "Can Export Property: " .. tostring(valid)
 		vim.api.nvim_set_option_value("modifiable", true, { buf = dimensions.buf })
 		vim.api.nvim_buf_clear_namespace(dimensions.buf, config.ns, 0, -1)
 		if not valid and err_msg then
 			str_valid = str_valid .. " (" .. err_msg .. ")"
 			vim.api.nvim_buf_set_lines(dimensions.buf, 0, -1, false, { str_valid })
-			vim.api.nvim_buf_set_extmark(dimensions.buf, config.ns, 0, #"Can Export: false (", {
+			vim.api.nvim_buf_set_extmark(dimensions.buf, config.ns, 0, #"Can Export Property: false (", {
 				end_col = #str_valid - 1,
 				hl_group = config.hl_group.RbxError,
 			})
 		else
 			vim.api.nvim_buf_set_lines(dimensions.buf, 0, -1, false, { str_valid })
 		end
-		vim.api.nvim_buf_set_extmark(dimensions.buf, config.ns, 0, #"Can Export: ", {
-			end_col = #"Can Export: " + (valid and #"true" or #"false"),
+		vim.api.nvim_buf_set_extmark(dimensions.buf, config.ns, 0, #"Can Export Property: ", {
+			end_col = #"Can Export Property: " + (valid and #"true" or #"false"),
 			hl_group = config.hl_group.RbxBoolean,
 		})
 		vim.api.nvim_buf_set_lines(

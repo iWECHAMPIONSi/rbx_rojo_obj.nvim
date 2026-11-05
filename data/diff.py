@@ -53,19 +53,17 @@ with open(script_dir + "/" + "data_old.json") as file:
     old_data_classes = old_data["Classes"]
     old_data_enums = old_data["Enums"]
 
+print("ROBLOX CHANGES")
 
 for key, data in new_data_classes.items():
     if key not in old_data_classes:
         print(f"NEW CLASS: {key}")
     elif data != old_data_classes[key]:
         tmp = deepcopy(data)
-        tmp["nested_classes"] = old_data_classes[key]["nested_classes"]
-        if tmp == old_data_classes[key]:
-            continue
 
         print(f"CHANGED CLASS: {key}")
-        old_p = old_data_classes[key]["properties"]
-        for k, i in data["properties"].items():
+        old_p = old_data_classes[key]["Properties"]
+        for k, i in data["Properties"].items():
             if not k in old_p.keys():
                 print(f"    NEW PROPERTY: {k}")
             elif i != old_p[k]:
@@ -76,7 +74,7 @@ for key, data in new_data_classes.items():
                     print(f"        Tags: [] -> {i["Tags"]}")
 
         for k in old_p.keys():
-            if not k in data["properties"].keys():
+            if not k in data["Properties"].keys():
                 print(f"    REMOVED PROPERTY: {k} -> {removed["Classes"][k]}")
 
 for key in old_data_classes.keys():
@@ -102,6 +100,7 @@ for key, data in new_data_enums.items():
                     print(f"    REMOVED ENUM FIELD: {name} -> {removed["Enums"][name]}")
                 else:
                     print(f"    REMOVED ENUM FIELD: {name} -> REMOVED")
+
 for key, data in old_data_enums.items():
     if not key in new_data_enums.keys():
         if key in removed["Enums"].keys():
